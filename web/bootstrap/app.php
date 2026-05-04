@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'agent' => EnsureAgentUser::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn () => route('agent.login'));
+        $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('agent.dashboard'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {

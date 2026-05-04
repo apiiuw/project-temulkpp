@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('agent login page can be rendered', function () {
-    $response = $this->get(route('agent.login'));
+    $response = $this->get(route('login'));
 
     $response->assertOk();
     $response->assertSee('Masuk ke akun agent');
@@ -19,7 +19,7 @@ test('agent can login and is redirected to dashboard', function () {
         'password' => 'Agent@12345',
     ]);
 
-    $response = $this->post(route('agent.login.store'), [
+    $response = $this->post(route('login.store'), [
         'email' => $agent->email,
         'password' => 'Agent@12345',
     ]);
@@ -35,12 +35,12 @@ test('non agent account cannot login from agent form', function () {
         'password' => 'Agent@12345',
     ]);
 
-    $response = $this->from(route('agent.login'))->post(route('agent.login.store'), [
+    $response = $this->from(route('login'))->post(route('login.store'), [
         'email' => 'user@example.com',
         'password' => 'Agent@12345',
     ]);
 
-    $response->assertRedirect(route('agent.login'));
+    $response->assertRedirect(route('login'));
     $response->assertSessionHasErrors('email');
     $this->assertGuest();
 });
@@ -48,5 +48,5 @@ test('non agent account cannot login from agent form', function () {
 test('agent dashboard requires authenticated agent account', function () {
     $response = $this->get(route('agent.dashboard'));
 
-    $response->assertRedirect(route('agent.login'));
+    $response->assertRedirect(route('login'));
 });

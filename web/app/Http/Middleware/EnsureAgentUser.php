@@ -17,7 +17,7 @@ class EnsureAgentUser
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('agent.login')->withErrors([
+            return redirect()->route('login')->withErrors([
                 'email' => 'Akun ini tidak memiliki akses ke halaman agent.',
             ]);
         }
