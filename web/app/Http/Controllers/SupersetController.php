@@ -56,11 +56,7 @@ class SupersetController extends Controller
                         'id' => $dashboardId,
                     ],
                 ],
-                'rls' => $user instanceof \App\Models\Agent ? [
-                    [
-                        'clause' => 'agent_id = ' . $user->id
-                    ]
-                ] : []
+                'rls' => []
             ]);
 
             if ($guestTokenResponse->failed()) {
