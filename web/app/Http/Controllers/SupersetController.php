@@ -55,10 +55,6 @@ class SupersetController extends Controller
                         'type' => 'dashboard',
                         'id' => $dashboardId,
                     ],
-                    [
-                        'type' => 'dataset',
-                        'id' => '1',
-                    ],
                 ],
                 'rls' => $user instanceof \App\Models\Agent ? [
                     [
