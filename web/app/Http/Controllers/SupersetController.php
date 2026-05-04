@@ -55,8 +55,16 @@ class SupersetController extends Controller
                         'type' => 'dashboard',
                         'id' => $dashboardId,
                     ],
+                    [
+                        'type' => 'dataset',
+                        'id' => '1',
+                    ],
                 ],
-                'rls' => []
+                'rls' => $user instanceof \App\Models\Agent ? [
+                    [
+                        'clause' => 'agent_id = ' . $user->id
+                    ]
+                ] : []
             ]);
 
             if ($guestTokenResponse->failed()) {
