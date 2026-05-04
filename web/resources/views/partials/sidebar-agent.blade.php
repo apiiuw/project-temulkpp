@@ -53,7 +53,7 @@
                     <a
                         href="{{ route($menu->route) }}"
                         title="{{ $menu->name }}"
-                        class="sidebar-center-content sidebar-transition flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all duration-300 {{ request()->routeIs($menu->route . '*') ? 'bg-white text-red-700 shadow-[0_14px_30px_rgba(255,255,255,0.16)]' : 'bg-white/5 text-white/82 hover:bg-white/12' }}"
+                        class="sidebar-center-content sidebar-transition flex items-center gap-3 rounded-2xl px-4 py-2 text-sm font-bold transition-all duration-300 {{ request()->routeIs($menu->route . '*') ? 'bg-white text-red-700 shadow-[0_14px_30px_rgba(255,255,255,0.16)]' : 'bg-white/5 text-white/82 hover:bg-white/12' }}"
                     >
                         <span class="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-current/15">
                             {!! $menu->icon !!}
@@ -69,7 +69,7 @@
             </nav>
         </div>
 
-        <form method="POST" action="{{ route('logout') }}" class="mt-auto border-t border-white/10 pt-6">
+        <form method="POST" action="{{ route('logout') }}" class="mt-auto pt-6">
             @csrf
             <button type="submit" class="sidebar-center-content sidebar-transition flex w-full items-center justify-center rounded-2xl border border-white/14 bg-white/8 px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-white/14">
                 <span class="sidebar-hide-content sidebar-transition mr-2">Logout</span>

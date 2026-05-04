@@ -3,7 +3,6 @@
 # Laravel
 web/node_modules/
 web/vendor/
-web/.env
 
 # Superset
 apache/venv/
