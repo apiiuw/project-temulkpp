@@ -1,0 +1,13 @@
+# Git Ignore for Temu LKPP Project
+
+# Laravel
+web/node_modules/
+web/vendor/
+web/.env
+
+# Superset
+apache/venv/
+
+# System
+.DS_Store
+Thumbs.db

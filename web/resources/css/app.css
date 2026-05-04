@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+@import "flowbite/src/themes/default";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-red-600 text-white px-4 py-2 rounded-lg;
+  }
+
+  /* Sidebar Transitions */
+  .sidebar-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* When sidebar is collapsed */
+  .sidebar-collapsed aside {
+    width: 90px !important;
+  }
+
+  .sidebar-collapsed .sidebar-hide-content {
+    display: none !important;
+    opacity: 0;
+  }
+
+  .sidebar-collapsed .sidebar-center-content {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  .sidebar-collapsed .sidebar-rotate-icon {
+    transform: rotate(180deg);
+  }
+
+  /* Ensure toggle button stays visible and clickable */
+  .sidebar-toggle-btn {
+    z-index: 50;
+  }
+
+  .sidebar-mini-logo {
+    display: none;
+  }
+
+  .sidebar-collapsed .sidebar-full-logo {
+    display: none !important;
+  }
+
+  .sidebar-collapsed .sidebar-mini-logo {
+    display: block !important;
+  }
+}
