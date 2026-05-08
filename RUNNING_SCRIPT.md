@@ -7,9 +7,9 @@ Dokumentasi ini menjelaskan langkah-langkah untuk menjalankan aplikasi Temu LKPP
 ## 📋 Persyaratan Sistem
 Pastikan perangkat Anda sudah terinstal:
 *   **PHP** (v8.2 atau terbaru)
-*   **MySQL** (Database sedang berjalan)
+*   **MySQL** (Database: `temulkpp` sedang berjalan)
 *   **Node.js & NPM**
-*   **Python** (Untuk menjalankan Superset)
+*   **Python** (v3.9 - v3.11 disarankan untuk Superset)
 
 ---
 
@@ -39,15 +39,15 @@ Jendela ini berfungsi untuk memproses tampilan (CSS/Javascript) agar aplikasi te
 Jendela ini berfungsi agar grafik dan statistik di dashboard (Agent, Pimpinan, Superadmin) dapat muncul.
 1.  Buka Terminal baru dan masuk ke folder `apache`.
 2.  Aktifkan lingkungan virtual Python:
-    ```bash
-    source venv/bin/activate
+    ```powershell
+    .\venv\Scripts\activate
     ```
-3.  Beritahu sistem lokasi file konfigurasi:
-    ```bash
-    export SUPERSET_CONFIG_PATH=$(pwd)/superset_config.py
+3.  Beritahu sistem lokasi file konfigurasi (PowerShell):
+    ```powershell
+    $env:SUPERSET_CONFIG_PATH = "$(Get-Location)\superset_config.py"
     ```
-4.  Jalankan server grafik:
-    ```bash
+4.  Jalankan server grafik (Port 8088):
+    ```powershell
     superset run -p 8088 --with-threads --reload --debugger
     ```
 5.  **Status:** Biarkan terminal ini tetap terbuka. Grafik tidak akan muncul jika jendela ini tertutup.
@@ -61,7 +61,7 @@ Jendela ini berfungsi agar grafik dan statistik di dashboard (Agent, Pimpinan, S
 | **Halaman Reservasi** | `http://127.0.0.1:8000/reservasi` | Halaman utama untuk tamu membuat janji |
 | **Halaman Front Desk** | `http://127.0.0.1:8000/front-desk` | Digunakan petugas untuk check-in tamu |
 | **Halaman Login** | `http://127.0.0.1:8000/auth/login` | Portal masuk Agent, Pimpinan, dan Superadmin |
-| **Panel Analitik** | `http://127.0.0.1:8088` | Dashboard internal grafik (Admin) |
+| **Panel Analitik Apache Superset** | `http://127.0.0.1:8088` | Dashboard internal grafik (Admin) |
 
 ---
 

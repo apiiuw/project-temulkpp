@@ -51,11 +51,12 @@
                     </div>
 
                     <div class="rounded-[24px] border border-dashed border-white/18 bg-black/20 p-4">
-                    <video id="scanner-preview" class="hidden h-72 w-full rounded-[22px] object-cover"></video>
-                    <div id="scanner-placeholder" class="flex h-72 items-center justify-center rounded-[22px] bg-white/6 text-center text-sm leading-relaxed text-white/60">
-                        Kamera sedang dipersiapkan untuk membaca QR code.
+                    <div id="scanner-preview-container" class="overflow-hidden rounded-[22px]">
+                        <div id="scanner-preview" class="h-72 w-full"></div>
+                        <div id="scanner-placeholder" class="flex h-72 items-center justify-center bg-white/6 text-center text-sm leading-relaxed text-white/60">
+                            Kamera sedang dipersiapkan untuk membaca QR code.
+                        </div>
                     </div>
-                    <canvas id="scanner-canvas" class="hidden"></canvas>
                     </div>
                 </div>
 
@@ -239,6 +240,7 @@
 </div>
 
 @push('scripts')
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -257,8 +259,7 @@
         const lateCountdownText = document.getElementById('late-countdown-text');
         const lateExpiredMessage = document.getElementById('late-expired-message');
 
-        let stream = null;
-        let scanInterval = null;
+        let html5QrCode = null;
         let isScanningResultHandled = false;
         let lateCountdownInterval = null;
 
@@ -319,92 +320,63 @@
             lateCountdownInterval = window.setInterval(updateCountdown, 1000);
         };
 
-        const stopScanner = () => {
-            if (scanInterval) {
-                window.clearInterval(scanInterval);
-                scanInterval = null;
+        const stopScanner = async () => {
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                } catch (err) {
+                    console.error("Gagal menghentikan scanner:", err);
+                }
             }
 
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-                stream = null;
-            }
-
-            if (video) {
-                video.srcObject = null;
-                video.classList.add('hidden');
-                video.style.transform = 'scaleX(1)';
-            }
-
-            if (placeholder) {
-                placeholder.classList.remove('hidden');
-            }
+            if (video) video.classList.add('hidden');
+            if (placeholder) placeholder.classList.remove('hidden');
         };
 
         const loadReservation = (reservationCode) => {
-            stopScanner();
-            window.location.href = `{{ route('front-desk') }}?kode_reservasi=${encodeURIComponent(reservationCode)}`;
+            stopScanner().then(() => {
+                window.location.href = `{{ route('front-desk') }}?kode_reservasi=${encodeURIComponent(reservationCode)}`;
+            });
         };
 
         const activateScanner = async () => {
-            if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) {
-                await Swal.fire({
-                    icon: 'info',
-                    title: 'Scan Kamera Tidak Didukung',
-                    text: 'Perangkat ini belum mendukung scan kamera otomatis. Gunakan input manual atau scanner eksternal.',
-                    confirmButtonColor: '#b91c1c',
-                });
-                return;
-            }
-
             try {
-                const barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+                // Hentikan scanner yang mungkin masih berjalan
+                await stopScanner();
 
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' },
-                    audio: false,
-                });
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("scanner-preview");
+                }
 
-                const [videoTrack] = stream.getVideoTracks();
-                const facingMode = videoTrack?.getSettings?.().facingMode;
-
-                video.srcObject = stream;
-                await video.play();
-                video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
                 video.classList.remove('hidden');
                 placeholder.classList.add('hidden');
                 isScanningResultHandled = false;
 
-                scanInterval = window.setInterval(async () => {
-                    if (isScanningResultHandled) {
-                        return;
-                    }
+                const config = { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                };
 
-                    try {
-                        const barcodes = await barcodeDetector.detect(video);
-
-                        if (!barcodes.length) {
-                            return;
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText) => {
+                        const scannedValue = (decodedText || '').trim();
+                        if (scannedValue && !isScanningResultHandled) {
+                            isScanningResultHandled = true;
+                            codeInput.value = scannedValue.toUpperCase();
+                            loadReservation(scannedValue.toUpperCase());
                         }
-
-                        const scannedValue = (barcodes[0].rawValue || '').trim();
-                        if (!scannedValue) {
-                            return;
-                        }
-
-                        codeInput.value = scannedValue.toUpperCase();
-                        isScanningResultHandled = true;
-                        loadReservation(scannedValue.toUpperCase());
-                    } catch (error) {
-                        // Ignore intermittent scan errors and keep camera active.
                     }
-                }, 800);
+                );
             } catch (error) {
-                stopScanner();
+                console.error("Scanner Error:", error);
+                await stopScanner();
                 await Swal.fire({
                     icon: 'warning',
                     title: 'Kamera Tidak Dapat Diakses',
-                    text: 'Izinkan akses kamera agar scanner QR otomatis bisa digunakan. Anda juga tetap bisa memakai input manual.',
+                    text: 'Pastikan Anda memberikan izin kamera dan tidak ada aplikasi lain yang sedang menggunakan kamera.',
                     confirmButtonColor: '#b91c1c',
                 });
             }
