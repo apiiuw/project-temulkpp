@@ -1,4 +1,5 @@
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import jsQR from 'jsqr';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
@@ -63,6 +64,9 @@ export function initializeFrontDeskScanner() {
     let lastRejectedValue = '';
     let lateCountdownInterval = null;
     let videoObserver = null;
+    let rawFrameInterval = null;
+    let offscreenCanvas = null;
+    let offscreenContext = null;
 
     const setScannerStatus = (text, tone = 'muted') => {
         if (!scannerStatus) {
@@ -140,47 +144,15 @@ export function initializeFrontDeskScanner() {
     };
 
     const fitScannerVideoBox = () => {
-        const container = preview?.parentElement;
         const videoElement = preview?.querySelector('video');
 
-        if (!preview || !container || !videoElement || !container.clientWidth || !container.clientHeight) {
+        if (!videoElement || !preview.clientWidth) {
             return;
         }
-
-        const videoWidth = videoElement.videoWidth;
-        const videoHeight = videoElement.videoHeight;
-
-        if (!videoWidth || !videoHeight) {
-            return;
-        }
-
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-        const videoRatio = videoWidth / videoHeight;
-        const containerRatio = containerWidth / containerHeight;
-
-        let targetWidth = containerWidth;
-        let targetHeight = containerHeight;
-
-        if (videoRatio > containerRatio) {
-            targetHeight = containerHeight;
-            targetWidth = Math.round(containerHeight * videoRatio);
-        } else {
-            targetWidth = containerWidth;
-            targetHeight = Math.round(containerWidth / videoRatio);
-        }
-
-        preview.style.width = `${targetWidth}px`;
-        preview.style.height = `${targetHeight}px`;
-        preview.style.left = '50%';
-        preview.style.top = '50%';
-        preview.style.right = 'auto';
-        preview.style.bottom = 'auto';
-        preview.style.transform = 'translate(-50%, -50%)';
 
         videoElement.style.width = '100%';
-        videoElement.style.height = '100%';
-        videoElement.style.objectFit = 'fill';
+        videoElement.style.height = `${preview.clientWidth}px`;
+        videoElement.style.objectFit = 'cover';
     };
 
     const observeScannerVideo = () => {
@@ -214,6 +186,11 @@ export function initializeFrontDeskScanner() {
 
         videoObserver?.disconnect();
         videoObserver = null;
+
+        if (rawFrameInterval !== null) {
+            window.clearInterval(rawFrameInterval);
+            rawFrameInterval = null;
+        }
 
         const currentScanner = scanner;
         const videoElement = preview?.querySelector('video');
@@ -249,16 +226,7 @@ export function initializeFrontDeskScanner() {
             scanner = null;
         }
 
-        if (preview) {
-            preview.classList.add('hidden');
-            preview.style.width = '';
-            preview.style.height = '';
-            preview.style.left = '';
-            preview.style.top = '';
-            preview.style.right = '';
-            preview.style.bottom = '';
-            preview.style.transform = '';
-        }
+        preview?.classList.add('hidden');
         placeholder?.classList.remove('hidden');
     };
 
@@ -367,34 +335,77 @@ export function initializeFrontDeskScanner() {
             observeScannerVideo();
             setScannerStatus('Meminta izin kamera…');
 
+            const handleDecodedText = (decodedText) => {
+                const scannedValue = (decodedText || '').trim().toUpperCase();
+
+                if (!scannedValue || resultHandled) {
+                    return;
+                }
+
+                if (!RESERVATION_CODE_PATTERN.test(scannedValue)) {
+                    if (scannedValue !== lastRejectedValue) {
+                        lastRejectedValue = scannedValue;
+                        setScannerStatus(
+                            `Terbaca, tetapi bukan kode reservasi: ${scannedValue.slice(0, 40)}`,
+                            'warn',
+                        );
+                    }
+
+                    return;
+                }
+
+                resultHandled = true;
+                if (codeInput) {
+                    codeInput.value = scannedValue;
+                }
+                loadReservation(scannedValue);
+            };
+
+            const startRawFrameFallback = () => {
+                if (rawFrameInterval !== null) {
+                    window.clearInterval(rawFrameInterval);
+                }
+
+                if (!offscreenCanvas) {
+                    offscreenCanvas = document.createElement('canvas');
+                    offscreenContext = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+                }
+
+                rawFrameInterval = window.setInterval(() => {
+                    if (resultHandled || !offscreenContext) {
+                        return;
+                    }
+
+                    const videoElement = preview?.querySelector('video');
+                    if (!videoElement || videoElement.readyState < 2 || !videoElement.videoWidth || !videoElement.videoHeight) {
+                        return;
+                    }
+
+                    const side = Math.min(videoElement.videoWidth, videoElement.videoHeight);
+                    const sx = Math.floor((videoElement.videoWidth - side) / 2);
+                    const sy = Math.floor((videoElement.videoHeight - side) / 2);
+
+                    if (offscreenCanvas.width !== side || offscreenCanvas.height !== side) {
+                        offscreenCanvas.width = side;
+                        offscreenCanvas.height = side;
+                    }
+
+                    offscreenContext.drawImage(videoElement, sx, sy, side, side, 0, 0, side, side);
+                    const imageData = offscreenContext.getImageData(0, 0, side, side);
+                    const decoded = jsQR(imageData.data, side, side, {
+                        inversionAttempts: 'attemptBoth',
+                    });
+
+                    if (decoded?.data) {
+                        handleDecodedText(decoded.data);
+                    }
+                }, 250);
+            };
+
             await scanner.start(
                 selectedCamera,
                 config,
-                (decodedText) => {
-                    const scannedValue = (decodedText || '').trim().toUpperCase();
-
-                    if (!scannedValue || resultHandled) {
-                        return;
-                    }
-
-                    if (!RESERVATION_CODE_PATTERN.test(scannedValue)) {
-                        if (scannedValue !== lastRejectedValue) {
-                            lastRejectedValue = scannedValue;
-                            setScannerStatus(
-                                `Terbaca, tetapi bukan kode reservasi: ${scannedValue.slice(0, 40)}`,
-                                'warn',
-                            );
-                        }
-
-                        return;
-                    }
-
-                    resultHandled = true;
-                    if (codeInput) {
-                        codeInput.value = scannedValue;
-                    }
-                    loadReservation(scannedValue);
-                },
+                handleDecodedText,
             );
 
             if (stopRequested) {
@@ -405,6 +416,7 @@ export function initializeFrontDeskScanner() {
 
             placeholder.classList.add('hidden');
             fitScannerVideoBox();
+            startRawFrameFallback();
             setScannerStatus('Kamera siap. Arahkan QR ke tengah frame.', 'ok');
         })();
 

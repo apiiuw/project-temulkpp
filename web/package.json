@@ -17,6 +17,7 @@
     "dependencies": {
         "flowbite": "^3.1.2",
         "html5-qrcode": "2.3.8",
+        "jsqr": "^1.4.0",
         "sweetalert2": "11.26.25"
     }
 }
