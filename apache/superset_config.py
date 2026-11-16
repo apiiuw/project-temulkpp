@@ -1,7 +1,7 @@
 import os
 import pymysql
 
-DATA_DIR = os.path.expanduser("~/.superset")
+DATA_DIR = os.environ.get("SUPERSET_HOME") or os.path.expanduser("~/.superset")
 SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(DATA_DIR, 'superset.db')}"
 SQLALCHEMY_ENGINE_OPTIONS = {"connect_args": {"timeout": 30}}
 SQLALCHEMY_TRACK_MODIFICATIONS = False
