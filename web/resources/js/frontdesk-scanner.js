@@ -320,7 +320,7 @@ export function initializeFrontDeskScanner() {
             });
 
             const config = {
-                fps: 15,
+                fps: 5,
                 qrbox: (width, height) => {
                     const side = Math.floor(Math.min(width, height) * 0.8);
 
@@ -361,6 +361,20 @@ export function initializeFrontDeskScanner() {
                 loadReservation(scannedValue);
             };
 
+            const decodeCanvasRegion = (videoElement, sx, sy, sw, sh, targetWidth, targetHeight) => {
+                if (offscreenCanvas.width !== targetWidth || offscreenCanvas.height !== targetHeight) {
+                    offscreenCanvas.width = targetWidth;
+                    offscreenCanvas.height = targetHeight;
+                }
+
+                offscreenContext.drawImage(videoElement, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+                const imageData = offscreenContext.getImageData(0, 0, targetWidth, targetHeight);
+
+                return jsQR(imageData.data, targetWidth, targetHeight, {
+                    inversionAttempts: 'attemptBoth',
+                });
+            };
+
             const startRawFrameFallback = () => {
                 if (rawFrameInterval !== null) {
                     window.clearInterval(rawFrameInterval);
@@ -370,6 +384,8 @@ export function initializeFrontDeskScanner() {
                     offscreenCanvas = document.createElement('canvas');
                     offscreenContext = offscreenCanvas.getContext('2d', { willReadFrequently: true });
                 }
+
+                let scanFullFrameNext = false;
 
                 rawFrameInterval = window.setInterval(() => {
                     if (resultHandled || !offscreenContext) {
@@ -381,25 +397,29 @@ export function initializeFrontDeskScanner() {
                         return;
                     }
 
-                    const side = Math.min(videoElement.videoWidth, videoElement.videoHeight);
-                    const sx = Math.floor((videoElement.videoWidth - side) / 2);
-                    const sy = Math.floor((videoElement.videoHeight - side) / 2);
+                    const vw = videoElement.videoWidth;
+                    const vh = videoElement.videoHeight;
+                    let decoded = null;
 
-                    if (offscreenCanvas.width !== side || offscreenCanvas.height !== side) {
-                        offscreenCanvas.width = side;
-                        offscreenCanvas.height = side;
+                    if (scanFullFrameNext) {
+                        const scale = Math.min(1, 640 / Math.max(vw, vh));
+                        const tw = Math.max(1, Math.round(vw * scale));
+                        const th = Math.max(1, Math.round(vh * scale));
+                        decoded = decodeCanvasRegion(videoElement, 0, 0, vw, vh, tw, th);
+                    } else {
+                        const side = Math.min(vw, vh);
+                        const sx = Math.floor((vw - side) / 2);
+                        const sy = Math.floor((vh - side) / 2);
+                        const targetSide = Math.min(side, 560);
+                        decoded = decodeCanvasRegion(videoElement, sx, sy, side, side, targetSide, targetSide);
                     }
 
-                    offscreenContext.drawImage(videoElement, sx, sy, side, side, 0, 0, side, side);
-                    const imageData = offscreenContext.getImageData(0, 0, side, side);
-                    const decoded = jsQR(imageData.data, side, side, {
-                        inversionAttempts: 'attemptBoth',
-                    });
+                    scanFullFrameNext = !scanFullFrameNext;
 
                     if (decoded?.data) {
                         handleDecodedText(decoded.data);
                     }
-                }, 250);
+                }, 200);
             };
 
             await scanner.start(
