@@ -70,11 +70,19 @@
                         <option value="inactive" {{ $filters['status'] === 'inactive' ? 'selected' : '' }}>Tidak Aktif</option>
                     </select>
                 </div>
+                <div class="w-full md:w-48">
+                    <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Urutkan</label>
+                    <select name="sort" class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 text-sm focus:border-amber-500 focus:ring-amber-500">
+                        <option value="name_asc" {{ ($filters['sort'] ?? 'name_asc') === 'name_asc' ? 'selected' : '' }}>Nama (A–Z)</option>
+                        <option value="name_desc" {{ ($filters['sort'] ?? 'name_asc') === 'name_desc' ? 'selected' : '' }}>Nama (Z–A)</option>
+                        <option value="latest" {{ ($filters['sort'] ?? 'name_asc') === 'latest' ? 'selected' : '' }}>Terbaru</option>
+                    </select>
+                </div>
                 <div class="flex gap-2">
                     <button type="submit" class="rounded-2xl bg-stone-900 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-stone-800 active:scale-95">
                         Filter
                     </button>
-                    @if($filters['q'] || $filters['status'])
+                    @if($filters['q'] || $filters['status'] || ($filters['sort'] ?? 'name_asc') !== 'name_asc')
                         <a href="{{ route('superadmin.master-agent') }}" class="rounded-2xl bg-stone-100 px-6 py-3 text-sm font-bold text-stone-600 transition-all hover:bg-stone-200 active:scale-95">
                             Reset
                         </a>

@@ -11,6 +11,7 @@ use App\Models\Menu;
 use App\Models\RoleMenu;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -67,9 +68,11 @@ class SuperadminController extends Controller
         $validatedFilters = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'in:active,inactive'],
+            'sort' => ['nullable', 'in:name_asc,name_desc,latest'],
         ]);
         $search = trim((string) ($validatedFilters['q'] ?? ''));
         $status = $validatedFilters['status'] ?? null;
+        $sort = $validatedFilters['sort'] ?? 'name_asc';
         
         $agentsQuery = Agent::query();
         
@@ -84,7 +87,28 @@ class SuperadminController extends Controller
             $agentsQuery->where('is_active', $status === 'active');
         }
         
-        $agents = $agentsQuery->latest('id')->paginate(5)->withQueryString();
+        if ($sort === 'latest') {
+            $agents = $agentsQuery->latest('id')->paginate(5)->withQueryString();
+        } else {
+            $perPage = 5;
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            $sortedAgents = $agentsQuery
+                ->get()
+                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE, $sort === 'name_desc')
+                ->values();
+
+            $agents = (new LengthAwarePaginator(
+                $sortedAgents->forPage($currentPage, $perPage)->values(),
+                $sortedAgents->count(),
+                $perPage,
+                $currentPage,
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ]
+            ));
+        }
+
         $activeAgentCount = Agent::query()->where('is_active', true)->count();
         $inactiveAgentCount = Agent::query()->where('is_active', false)->count();
 
@@ -113,6 +137,7 @@ class SuperadminController extends Controller
             'filters' => [
                 'q' => $search,
                 'status' => $status,
+                'sort' => $sort,
             ],
         ]);
     }
