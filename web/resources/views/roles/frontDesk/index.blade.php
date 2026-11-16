@@ -252,6 +252,8 @@
         const startButton = document.getElementById('start-scanner-button');
         const stopButton = document.getElementById('stop-scanner-button');
         const video = document.getElementById('scanner-preview');
+        const canvas = document.getElementById('scanner-canvas');
+        const canvasContext = canvas ? canvas.getContext('2d', { willReadFrequently: true }) : null;
         const placeholder = document.getElementById('scanner-placeholder');
         const lateCountdownCard = document.getElementById('late-countdown-card');
         const lateCountdownText = document.getElementById('late-countdown-text');
@@ -346,8 +348,60 @@
             window.location.href = `{{ route('front-desk') }}?kode_reservasi=${encodeURIComponent(reservationCode)}`;
         };
 
+        const createBarcodeDetector = async () => {
+            if (!('BarcodeDetector' in window)) {
+                return null;
+            }
+
+            try {
+                const supportedFormats = typeof window.BarcodeDetector.getSupportedFormats === 'function'
+                    ? await window.BarcodeDetector.getSupportedFormats()
+                    : ['qr_code'];
+
+                if (!supportedFormats.includes('qr_code')) {
+                    return null;
+                }
+
+                return new window.BarcodeDetector({ formats: ['qr_code'] });
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const detectQrWithJsQr = () => {
+            if (typeof window.jsQR !== 'function' || !canvas || !canvasContext) {
+                return '';
+            }
+
+            if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+                return '';
+            }
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+            const decoded = window.jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'attemptBoth',
+            });
+
+            return (decoded?.data || '').trim();
+        };
+
         const activateScanner = async () => {
-            if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                await Swal.fire({
+                    icon: 'info',
+                    title: 'Scan Kamera Tidak Didukung',
+                    text: 'Perangkat ini belum mendukung scan kamera otomatis. Gunakan input manual atau scanner eksternal.',
+                    confirmButtonColor: '#b91c1c',
+                });
+                return;
+            }
+
+            let barcodeDetector = await createBarcodeDetector();
+            if (!barcodeDetector && typeof window.jsQR !== 'function') {
                 await Swal.fire({
                     icon: 'info',
                     title: 'Scan Kamera Tidak Didukung',
@@ -358,8 +412,6 @@
             }
 
             try {
-                const barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
-
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment' },
                     audio: false,
@@ -376,29 +428,39 @@
                 isScanningResultHandled = false;
 
                 scanInterval = window.setInterval(async () => {
-                    if (isScanningResultHandled) {
+                    if (isScanningResultHandled || video.readyState < 2) {
                         return;
                     }
 
-                    try {
-                        const barcodes = await barcodeDetector.detect(video);
+                    let scannedValue = '';
 
-                        if (!barcodes.length) {
-                            return;
+                    if (barcodeDetector) {
+                        try {
+                            const barcodes = await barcodeDetector.detect(video);
+                            scannedValue = (barcodes[0]?.rawValue || '').trim();
+                        } catch (error) {
+                            // Disable native detector on runtime failure and rely on jsQR fallback.
+                            barcodeDetector = null;
                         }
-
-                        const scannedValue = (barcodes[0].rawValue || '').trim();
-                        if (!scannedValue) {
-                            return;
-                        }
-
-                        codeInput.value = scannedValue.toUpperCase();
-                        isScanningResultHandled = true;
-                        loadReservation(scannedValue.toUpperCase());
-                    } catch (error) {
-                        // Ignore intermittent scan errors and keep camera active.
                     }
-                }, 800);
+
+                    if (!scannedValue) {
+                        try {
+                            scannedValue = detectQrWithJsQr();
+                        } catch (error) {
+                            // Ignore intermittent frame read errors and keep camera active.
+                        }
+                    }
+
+                    if (!scannedValue) {
+                        return;
+                    }
+
+                    const normalizedCode = scannedValue.toUpperCase();
+                    codeInput.value = normalizedCode;
+                    isScanningResultHandled = true;
+                    loadReservation(normalizedCode);
+                }, 350);
             } catch (error) {
                 stopScanner();
                 await Swal.fire({
