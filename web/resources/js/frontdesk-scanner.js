@@ -4,6 +4,7 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 
 const RESERVATION_CODE_PATTERN = /^RES-\d{8}-[A-Z0-9]{4}$/;
 const REAR_CAMERA_LABEL_PATTERN = /(back|rear|environment|belakang)/i;
+const IGNORED_CAMERA_LABEL_PATTERN = /(virtual|obs|infrared|\bir\b|windows hello|snap camera|droidcam|iriun)/i;
 
 function cameraErrorMessage(error) {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -230,14 +231,16 @@ export function initializeFrontDeskScanner() {
             return { facingMode: { ideal: 'environment' } };
         }
 
-        const preferredCamera = cameras.find((camera) => REAR_CAMERA_LABEL_PATTERN.test(camera.label || ''));
+        const usableCameras = cameras.filter((camera) => !IGNORED_CAMERA_LABEL_PATTERN.test(camera.label || ''));
+        const candidateCameras = usableCameras.length ? usableCameras : cameras;
+        const preferredCamera = candidateCameras.find((camera) => REAR_CAMERA_LABEL_PATTERN.test(camera.label || ''));
 
         if (preferredCamera?.id) {
             return preferredCamera.id;
         }
 
-        if (cameras[0]?.id) {
-            return cameras[0].id;
+        if (candidateCameras[0]?.id) {
+            return candidateCameras[0].id;
         }
 
         return { facingMode: { ideal: 'environment' } };
@@ -304,6 +307,7 @@ export function initializeFrontDeskScanner() {
             scanner = new Html5Qrcode('scanner-preview', {
                 verbose: false,
                 formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                useBarCodeDetectorIfSupported: false,
             });
 
             const config = {
@@ -312,6 +316,10 @@ export function initializeFrontDeskScanner() {
                     const side = Math.floor(Math.min(width, height) * 0.8);
 
                     return { width: side, height: side };
+                },
+                videoConstraints: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
                 },
             };
 
