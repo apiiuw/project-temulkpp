@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\BuildsRatingDashboard;
 use App\Models\Agent;
+use App\Models\AgentSchedule;
 use App\Models\Pimpinan;
 use App\Models\Reservation;
 use App\Models\Menu;
@@ -86,16 +87,33 @@ class SuperadminController extends Controller
         $agents = $agentsQuery->latest('id')->paginate(5)->withQueryString();
         $activeAgentCount = Agent::query()->where('is_active', true)->count();
         $inactiveAgentCount = Agent::query()->where('is_active', false)->count();
-        
+
+        $allAgents = Agent::query()
+            ->get()
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+
+        $scheduleMatrix = $this->buildScheduleMatrix();
+        $currentParity = (int) now()->isoWeek() % 2;
+        $activeTab = $request->query('tab') === 'schedules' ? 'schedules' : 'agents';
+        $selectedParity = in_array($request->query('parity'), ['0', '1'], true)
+            ? (int) $request->query('parity')
+            : $currentParity;
+
         return view('roles.superadmin.master-data.agent', [
             'title' => 'Master Data Agent',
             'agents' => $agents,
+            'allAgents' => $allAgents,
+            'scheduleMatrix' => $scheduleMatrix,
+            'currentParity' => $currentParity,
+            'selectedParity' => $selectedParity,
+            'activeTab' => $activeTab,
             'activeAgentCount' => $activeAgentCount,
             'inactiveAgentCount' => $inactiveAgentCount,
             'filters' => [
                 'q' => $search,
                 'status' => $status,
-            ]
+            ],
         ]);
     }
 
@@ -136,6 +154,102 @@ class SuperadminController extends Controller
         $agent->update($validated);
 
         return redirect()->back()->with('success', 'Agent berhasil diperbarui.');
+    }
+
+    public function updateAgentSchedules(Request $request)
+    {
+        $validated = $request->validate([
+            'parity' => ['required', 'integer', 'in:0,1'],
+            'shifts' => ['nullable', 'array'],
+            'shifts.*' => ['array'],
+            'shifts.*.*' => ['required', 'string', 'in:morning,afternoon,off'],
+        ]);
+
+        $parity = (int) $validated['parity'];
+        $shifts = $validated['shifts'] ?? [];
+        $validDays = array_keys(AgentSchedule::OPERATIONAL_DAYS);
+        $validAgentIds = Agent::query()->pluck('id')->all();
+        $now = now();
+        $rows = [];
+
+        foreach ($shifts as $day => $agentShifts) {
+            $dayInt = (int) $day;
+            if (!in_array($dayInt, $validDays, true)) {
+                continue;
+            }
+
+            foreach ($agentShifts as $agentId => $shift) {
+                $agentIdInt = (int) $agentId;
+                if (!in_array($agentIdInt, $validAgentIds, true) || $shift === 'off') {
+                    continue;
+                }
+
+                $times = $shift === 'morning'
+                    ? AgentSchedule::MORNING_TIMES
+                    : AgentSchedule::AFTERNOON_TIMES;
+
+                foreach ($times as $time) {
+                    $rows[] = [
+                        'day' => $dayInt,
+                        'time' => $time,
+                        'agent_id' => $agentIdInt,
+                        'parity' => $parity,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
+        }
+
+        DB::transaction(function () use ($parity, $validDays, $rows): void {
+            AgentSchedule::query()
+                ->where('parity', $parity)
+                ->whereIn('day', $validDays)
+                ->delete();
+
+            if ($rows !== []) {
+                AgentSchedule::query()->insert($rows);
+            }
+        });
+
+        $parityLabel = AgentSchedule::PARITIES[$parity] ?? 'Jadwal';
+
+        return redirect()
+            ->route('superadmin.master-agent', ['tab' => 'schedules', 'parity' => $parity])
+            ->with('success', "Jadwal shift {$parityLabel} berhasil disimpan.");
+    }
+
+    public function generateAgentSchedules()
+    {
+        app(\Database\Seeders\AgentScheduleSeeder::class)->run();
+
+        return redirect()
+            ->route('superadmin.master-agent', ['tab' => 'schedules', 'parity' => (int) now()->isoWeek() % 2])
+            ->with('success', 'Pola jadwal seimbang (Minggu Ganjil & Genap) berhasil di-generate.');
+    }
+
+    /**
+     * @return array<int, array<int, array<int, string>>>
+     */
+    private function buildScheduleMatrix(): array
+    {
+        $matrix = [];
+        $morningSet = array_flip(AgentSchedule::MORNING_TIMES);
+        $afternoonSet = array_flip(AgentSchedule::AFTERNOON_TIMES);
+
+        foreach (AgentSchedule::query()->get(['parity', 'day', 'time', 'agent_id']) as $slot) {
+            $parity = (int) $slot->parity;
+            $day = (int) $slot->day;
+            $agentId = (int) $slot->agent_id;
+
+            if (isset($morningSet[$slot->time])) {
+                $matrix[$parity][$day][$agentId] = 'morning';
+            } elseif (isset($afternoonSet[$slot->time])) {
+                $matrix[$parity][$day][$agentId] = 'afternoon';
+            }
+        }
+
+        return $matrix;
     }
 
     public function toggleAgentStatus(Agent $agent)

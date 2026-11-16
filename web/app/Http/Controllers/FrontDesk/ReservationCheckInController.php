@@ -178,15 +178,17 @@ class ReservationCheckInController extends Controller
             ->where('parity', (int) $reservationTime->isoWeek() % 2)
             ->pluck('agent_id');
 
+        $activeDayQuery = fn () => Agent::query()->where('is_active', true);
+
         $candidateAgents = $withCounts(
-            Agent::query()->when(
+            $activeDayQuery()->when(
                 $scheduledAgentIds->isNotEmpty(),
                 fn ($query) => $query->whereIn('id', $scheduledAgentIds)
             )
         )->get();
 
         if ($candidateAgents->isEmpty()) {
-            $candidateAgents = $withCounts(Agent::query())->get();
+            $candidateAgents = $withCounts($activeDayQuery())->get();
         }
 
         if ($candidateAgents->isEmpty()) {

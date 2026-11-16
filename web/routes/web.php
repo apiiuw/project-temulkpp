@@ -14,7 +14,6 @@ use App\Http\Controllers\Users\ReservasiController;
 use App\Http\Controllers\Users\AturUlangJadwalController;
 use App\Http\Controllers\Users\PenilaianController;
 use App\Http\Controllers\SupersetController;
-use App\Http\Controllers\Superadmin\ReservationImportController;
 
 
 // Users
@@ -81,6 +80,8 @@ Route::middleware(['auth:superadmin'])->prefix('superadmin')->group(function () 
             ->name('superadmin.permissions.update');
     Route::get('/master-data/agent', [SuperadminController::class, 'masterAgent'])->middleware('menu:superadmin')->name('superadmin.master-agent');
     Route::post('/master-data/agent', [SuperadminController::class, 'storeAgent'])->middleware('menu:superadmin')->name('superadmin.master-agent.store');
+    Route::post('/master-data/agent/schedules', [SuperadminController::class, 'updateAgentSchedules'])->middleware('menu:superadmin')->name('superadmin.master-agent.schedules.update');
+    Route::post('/master-data/agent/schedules/generate', [SuperadminController::class, 'generateAgentSchedules'])->middleware('menu:superadmin')->name('superadmin.master-agent.schedules.generate');
     Route::put('/master-data/agent/{agent}', [SuperadminController::class, 'updateAgent'])->middleware('menu:superadmin')->name('superadmin.master-agent.update');
     Route::patch('/master-data/agent/{agent}/toggle-status', [SuperadminController::class, 'toggleAgentStatus'])->middleware('menu:superadmin')->name('superadmin.master-agent.toggle-status');
     Route::get('/master-data/pimpinan', [SuperadminController::class, 'masterPimpinan'])->middleware('menu:superadmin')->name('superadmin.master-pimpinan');
@@ -95,10 +96,6 @@ Route::middleware(['auth:superadmin'])->prefix('superadmin')->group(function () 
 
     // Reservation Settings
     Route::get('/pengaturan-reservasi', [ReservationSettingController::class, 'index'])->middleware('menu:superadmin')->name('superadmin.reservation-settings');
-    Route::get('/import-data-reservasi', [ReservationImportController::class, 'index'])->middleware('menu:superadmin')->name('superadmin.reservation-import.index');
-    Route::post('/import-data-reservasi/validate', [ReservationImportController::class, 'validateFile'])->middleware('menu:superadmin')->name('superadmin.reservation-import.validate');
-    Route::get('/import-data-reservasi/{batch}', [ReservationImportController::class, 'show'])->middleware('menu:superadmin')->name('superadmin.reservation-import.show');
-    Route::post('/import-data-reservasi/{batch}/import', [ReservationImportController::class, 'import'])->middleware('menu:superadmin')->name('superadmin.reservation-import.import');
     Route::post('/pengaturan-reservasi', [ReservationSettingController::class, 'updateSettings'])->middleware('menu:superadmin')->name('superadmin.reservation-settings.update');
     Route::post('/pengaturan-reservasi/reset', [ReservationSettingController::class, 'resetSettings'])->middleware('menu:superadmin')->name('superadmin.reservation-settings.reset');
     Route::post('/service-types', [ReservationSettingController::class, 'storeServiceType'])->middleware('menu:superadmin')->name('superadmin.service-types.store');

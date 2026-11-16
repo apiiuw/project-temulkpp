@@ -35,6 +35,19 @@
             </div>
         </div>
 
+        {{-- Main Tabs: Daftar Agent vs Jadwal Shift Ganjil/Genap --}}
+        <div class="mb-6 inline-flex rounded-2xl border border-stone-200 bg-white p-1.5 shadow-sm">
+            <a href="{{ route('superadmin.master-agent', ['tab' => 'agents']) }}"
+               class="rounded-xl px-5 py-2.5 text-sm font-bold transition-all {{ $activeTab === 'agents' ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900' }}">
+                Daftar Agent
+            </a>
+            <a href="{{ route('superadmin.master-agent', ['tab' => 'schedules', 'parity' => $selectedParity]) }}"
+               class="rounded-xl px-5 py-2.5 text-sm font-bold transition-all {{ $activeTab === 'schedules' ? 'bg-amber-900 text-white shadow-sm' : 'text-stone-600 hover:text-stone-900' }}">
+                Jadwal Shift (Ganjil &amp; Genap)
+            </a>
+        </div>
+
+        @if($activeTab === 'agents')
         {{-- Filter Section --}}
         <div class="mb-6 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
             <form method="GET" action="{{ route('superadmin.master-agent') }}" class="flex flex-col gap-4 md:flex-row md:items-end">
@@ -78,6 +91,7 @@
                         <tr class="border-b border-stone-100 bg-stone-50/50">
                             <th class="px-6 py-5 text-xs font-bold uppercase tracking-widest text-stone-400">Agent</th>
                             <th class="px-6 py-5 text-xs font-bold uppercase tracking-widest text-stone-400">Status</th>
+                            <th class="px-6 py-5 text-xs font-bold uppercase tracking-widest text-stone-400">Jadwal Minggu Ini</th>
                             <th class="px-6 py-5 text-xs font-bold uppercase tracking-widest text-stone-400">Terdaftar</th>
                             <th class="px-6 py-5 text-right text-xs font-bold uppercase tracking-widest text-stone-400">Aksi</th>
                         </tr>
@@ -108,6 +122,27 @@
                                             Tidak Aktif
                                         </span>
                                     @endif
+                                </td>
+                                <td class="px-6 py-5">
+                                    @php
+                                        $weekShifts = $scheduleMatrix[$currentParity] ?? [];
+                                    @endphp
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach(\App\Models\AgentSchedule::OPERATIONAL_DAYS as $dayNum => $dayName)
+                                            @php
+                                                $shift = $weekShifts[$dayNum][$agent->id] ?? 'off';
+                                                $shortDay = mb_substr($dayName, 0, 3);
+                                            @endphp
+                                            @if($shift === 'morning')
+                                                <span class="inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">{{ $shortDay }}: Pagi</span>
+                                            @elseif($shift === 'afternoon')
+                                                <span class="inline-flex items-center rounded-lg border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-800">{{ $shortDay }}: Siang</span>
+                                            @endif
+                                        @endforeach
+                                        @if(collect(\App\Models\AgentSchedule::OPERATIONAL_DAYS)->every(fn ($n, $d) => ($weekShifts[$d][$agent->id] ?? 'off') === 'off'))
+                                            <span class="text-xs font-medium text-stone-400">Belum terjadwal</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-5">
                                     <p class="text-sm font-medium text-stone-600">{{ $agent->created_at->format('d M Y') }}</p>
@@ -148,7 +183,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-20 text-center">
+                                <td colspan="5" class="px-6 py-20 text-center">
                                     <div class="flex flex-col items-center">
                                         <div class="mb-4 rounded-full bg-stone-100 p-4">
                                             <svg class="h-10 w-10 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,6 +204,96 @@
                 @include('partials.pagination', ['paginator' => $agents])
             </div>
         </div>
+        @else
+        {{-- Jadwal Shift Tab (Minggu Ganjil & Minggu Genap) --}}
+        <div class="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-4 border-b border-stone-100 bg-stone-50/60 p-6 md:flex-row md:items-center md:justify-between">
+                <div class="flex flex-wrap items-center gap-2">
+                    @foreach(\App\Models\AgentSchedule::PARITIES as $parityKey => $parityLabel)
+                        <a href="{{ route('superadmin.master-agent', ['tab' => 'schedules', 'parity' => $parityKey]) }}"
+                           class="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-bold transition-all {{ $selectedParity === $parityKey ? 'border-amber-900 bg-amber-900 text-white shadow-sm' : 'border-stone-200 bg-white text-stone-700 hover:bg-stone-100' }}">
+                            <span>{{ $parityLabel }}</span>
+                            @if($currentParity === $parityKey)
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider {{ $selectedParity === $parityKey ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700' }}">
+                                    Minggu Ini
+                                </span>
+                            @endif
+                        </a>
+                    @endforeach
+                </div>
+
+                <form action="{{ route('superadmin.master-agent.schedules.generate') }}" method="POST" onsubmit="return confirm('Generate ulang pola jadwal seimbang untuk Minggu Ganjil & Genap? Jadwal manual saat ini akan ditimpa.')">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-stone-700 transition-all hover:border-amber-300 hover:bg-amber-50 hover:text-amber-900">
+                        Generate Pola Seimbang
+                    </button>
+                </form>
+            </div>
+
+            <form action="{{ route('superadmin.master-agent.schedules.update') }}" method="POST">
+                @csrf
+                <input type="hidden" name="parity" value="{{ $selectedParity }}">
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-stone-100 bg-stone-50/40">
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-widest text-stone-400">Agent</th>
+                                @foreach(\App\Models\AgentSchedule::OPERATIONAL_DAYS as $dayNumber => $dayName)
+                                    <th class="px-4 py-4 text-center">
+                                        <p class="text-xs font-bold uppercase tracking-widest text-stone-600">{{ $dayName }}</p>
+                                        <p class="mt-1 text-[11px] font-semibold text-stone-400" id="day-summary-{{ $dayNumber }}">
+                                            Pagi: <span class="text-amber-700" data-count-morning="{{ $dayNumber }}">0</span> · Siang: <span class="text-sky-700" data-count-afternoon="{{ $dayNumber }}">0</span>
+                                        </p>
+                                    </th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-stone-100">
+                            @foreach($allAgents as $agentItem)
+                                <tr class="hover:bg-stone-50/50">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <span class="font-bold text-stone-900">{{ $agentItem->name }}</span>
+                                            @if(!$agentItem->is_active)
+                                                <span class="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-500">Non-Aktif</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    @foreach(\App\Models\AgentSchedule::OPERATIONAL_DAYS as $dayNumber => $dayName)
+                                        @php
+                                            $currentShift = $scheduleMatrix[$selectedParity][$dayNumber][$agentItem->id] ?? 'off';
+                                        @endphp
+                                        <td class="px-4 py-3 text-center">
+                                            <select
+                                                name="shifts[{{ $dayNumber }}][{{ $agentItem->id }}]"
+                                                data-shift-day="{{ $dayNumber }}"
+                                                onchange="updateScheduleSummary()"
+                                                class="w-full min-w-[130px] rounded-xl border-stone-200 bg-stone-50 py-2 px-3 text-xs font-bold text-stone-700 focus:border-amber-500 focus:ring-amber-500"
+                                            >
+                                                <option value="off" {{ $currentShift === 'off' ? 'selected' : '' }}>Libur</option>
+                                                <option value="morning" {{ $currentShift === 'morning' ? 'selected' : '' }}>Pagi (08:00–11:20)</option>
+                                                <option value="afternoon" {{ $currentShift === 'afternoon' ? 'selected' : '' }}>Siang (13:00–15:40)</option>
+                                            </select>
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex flex-col gap-3 border-t border-stone-100 bg-stone-50/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-xs font-medium text-stone-500">
+                        Sedang mengedit: <span class="font-bold text-stone-800">{{ \App\Models\AgentSchedule::PARITIES[$selectedParity] }}</span> (ISO Week ke-{{ now()->isoWeek() }} · Parity {{ $currentParity }}).
+                    </p>
+                    <button type="submit" class="rounded-2xl bg-amber-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-amber-900/20 transition-all hover:bg-amber-800 active:scale-95">
+                        Simpan Jadwal {{ \App\Models\AgentSchedule::PARITIES[$selectedParity] }}
+                    </button>
+                </div>
+            </form>
+        </div>
+        @endif
     </div>
 </div>
 
@@ -286,6 +411,30 @@
         
         openModal('editAgentModal');
     }
+
+    function updateScheduleSummary() {
+        const days = [1, 2, 3, 4];
+        days.forEach((day) => {
+            const selects = document.querySelectorAll(`select[data-shift-day="${day}"]`);
+            if (!selects.length) {
+                return;
+            }
+
+            let morning = 0;
+            let afternoon = 0;
+            selects.forEach((select) => {
+                if (select.value === 'morning') morning++;
+                if (select.value === 'afternoon') afternoon++;
+            });
+
+            const morningEl = document.querySelector(`[data-count-morning="${day}"]`);
+            const afternoonEl = document.querySelector(`[data-count-afternoon="${day}"]`);
+            if (morningEl) morningEl.textContent = morning;
+            if (afternoonEl) afternoonEl.textContent = afternoon;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', updateScheduleSummary);
 </script>
 
 @if(session('success'))

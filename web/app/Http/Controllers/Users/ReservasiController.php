@@ -201,13 +201,14 @@ class ReservasiController extends Controller
             'reservations as total_reservations_count',
         ]);
 
-        $availableQuery = fn () => Agent::query()
-            ->when(
-                $assignedAgentIdsInSlot->isNotEmpty(),
-                fn ($query) => $query->whereNotIn('id', $assignedAgentIdsInSlot)
-            );
+        $activeDayQuery = fn () => Agent::query()->where('is_active', true);
 
-        // 1. Agent terjadwal tetap untuk hari + jam ini, kecuali yang sudah dischedule jam ini.
+        $availableQuery = fn () => $activeDayQuery()->when(
+            $assignedAgentIdsInSlot->isNotEmpty(),
+            fn ($query) => $query->whereNotIn('id', $assignedAgentIdsInSlot)
+        );
+
+        // 1. Agent terjadwal tetap untuk hari + jam ini yang aktif pada hari tersebut, kecuali yang sudah dischedule jam ini.
         $candidateAgents = $withCounts(
             $availableQuery()->when(
                 $scheduledAgentIds->isNotEmpty(),
@@ -215,14 +216,14 @@ class ReservasiController extends Controller
             )
         )->get();
 
-        // 2. Slot tidak punya jadwal tetap atau semua terjadwal sudah terpakai: pakai semua agent yang bebas jam ini.
+        // 2. Slot tidak punya jadwal tetap atau semua terjadwal sudah terpakai: pakai semua agent aktif hari itu yang bebas jam ini.
         if ($candidateAgents->isEmpty()) {
             $candidateAgents = $withCounts($availableQuery())->get();
         }
 
-        // 3. Semua agent sudah terpakai di jam ini: tetap isi dengan agent beban paling ringan.
+        // 3. Semua agent aktif hari itu sudah terpakai di jam ini: tetap isi dengan agent aktif hari itu yang bebannya paling ringan.
         if ($candidateAgents->isEmpty()) {
-            $candidateAgents = $withCounts(Agent::query())->get();
+            $candidateAgents = $withCounts($activeDayQuery())->get();
         }
 
         return $this->pickFairAgentId($candidateAgents);
