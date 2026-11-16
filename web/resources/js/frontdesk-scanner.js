@@ -1,5 +1,6 @@
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import jsQR from 'jsqr';
+import QrScanner from 'qr-scanner';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
@@ -65,6 +66,8 @@ export function initializeFrontDeskScanner() {
     let lateCountdownInterval = null;
     let videoObserver = null;
     let rawFrameInterval = null;
+    let rawScanInFlight = false;
+    let qrEnginePromise = null;
     let offscreenCanvas = null;
     let offscreenContext = null;
 
@@ -191,6 +194,7 @@ export function initializeFrontDeskScanner() {
             window.clearInterval(rawFrameInterval);
             rawFrameInterval = null;
         }
+        rawScanInFlight = false;
 
         const currentScanner = scanner;
         const videoElement = preview?.querySelector('video');
@@ -375,6 +379,19 @@ export function initializeFrontDeskScanner() {
                 });
             };
 
+            const getQrEngine = () => {
+                if (!qrEnginePromise) {
+                    // Force Nimiq's Web Worker decoder so Windows BarcodeDetector bugs are bypassed.
+                    QrScanner._disableBarcodeDetector = true;
+                    qrEnginePromise = QrScanner.createQrEngine().catch((error) => {
+                        console.warn('QrScanner worker unavailable, using jsQR fallback:', error);
+                        return null;
+                    });
+                }
+
+                return qrEnginePromise;
+            };
+
             const startRawFrameFallback = () => {
                 if (rawFrameInterval !== null) {
                     window.clearInterval(rawFrameInterval);
@@ -385,10 +402,10 @@ export function initializeFrontDeskScanner() {
                     offscreenContext = offscreenCanvas.getContext('2d', { willReadFrequently: true });
                 }
 
-                let scanFullFrameNext = false;
+                const enginePromise = getQrEngine();
 
-                rawFrameInterval = window.setInterval(() => {
-                    if (resultHandled || !offscreenContext) {
+                rawFrameInterval = window.setInterval(async () => {
+                    if (resultHandled || rawScanInFlight) {
                         return;
                     }
 
@@ -397,29 +414,49 @@ export function initializeFrontDeskScanner() {
                         return;
                     }
 
-                    const vw = videoElement.videoWidth;
-                    const vh = videoElement.videoHeight;
-                    let decoded = null;
-
-                    if (scanFullFrameNext) {
-                        const scale = Math.min(1, 640 / Math.max(vw, vh));
-                        const tw = Math.max(1, Math.round(vw * scale));
-                        const th = Math.max(1, Math.round(vh * scale));
-                        decoded = decodeCanvasRegion(videoElement, 0, 0, vw, vh, tw, th);
-                    } else {
+                    rawScanInFlight = true;
+                    try {
+                        const qrEngine = await enginePromise;
+                        const vw = videoElement.videoWidth;
+                        const vh = videoElement.videoHeight;
                         const side = Math.min(vw, vh);
                         const sx = Math.floor((vw - side) / 2);
                         const sy = Math.floor((vh - side) / 2);
-                        const targetSide = Math.min(side, 560);
-                        decoded = decodeCanvasRegion(videoElement, sx, sy, side, side, targetSide, targetSide);
-                    }
 
-                    scanFullFrameNext = !scanFullFrameNext;
+                        if (qrEngine) {
+                            try {
+                                const result = await QrScanner.scanImage(videoElement, {
+                                    qrEngine,
+                                    scanRegion: {
+                                        x: sx,
+                                        y: sy,
+                                        width: side,
+                                        height: side,
+                                        downScaledWidth: 480,
+                                        downScaledHeight: 480,
+                                    },
+                                    alsoTryWithoutScanRegion: true,
+                                    returnDetailedScanResult: true,
+                                });
 
-                    if (decoded?.data) {
-                        handleDecodedText(decoded.data);
+                                if (result?.data) {
+                                    handleDecodedText(result.data);
+                                    return;
+                                }
+                            } catch {
+                                // No QR code found in this frame; try next frame or fallback.
+                            }
+                        } else if (offscreenContext) {
+                            const targetSide = Math.min(side, 560);
+                            const decoded = decodeCanvasRegion(videoElement, sx, sy, side, side, targetSide, targetSide);
+                            if (decoded?.data) {
+                                handleDecodedText(decoded.data);
+                            }
+                        }
+                    } finally {
+                        rawScanInFlight = false;
                     }
-                }, 200);
+                }, 180);
             };
 
             await scanner.start(
