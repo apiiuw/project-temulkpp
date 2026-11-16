@@ -6,7 +6,7 @@
         <div class="rounded-4xl border border-stone-200/80 bg-white/90 p-6 shadow-[0_24px_60px_rgba(120,53,15,0.10)] backdrop-blur-xl sm:p-8">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.3em] text-red-700">Pimpinan Report</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.3em] text-red-700">Laporan Pimpinan</p>
                     <h1 class="mt-2 text-3xl font-black text-stone-900 sm:text-4xl">Laporan Layanan</h1>
                     <p class="mt-3 max-w-3xl text-sm leading-relaxed text-stone-600">
                         Rekap data layanan lintas status dengan filter lengkap untuk kebutuhan analisis dan pencetakan laporan.
@@ -36,15 +36,15 @@
 
         <section class="mt-6 rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
             <p class="text-xs font-bold uppercase tracking-[0.22em] text-red-600">Filter Laporan</p>
-            <h2 class="mt-2 text-xl font-black text-stone-900">Filter dan Search</h2>
+            <h2 class="mt-2 text-xl font-black text-stone-900">Filter dan Pencarian</h2>
 
             <form method="GET" action="{{ route('pimpinan.laporan') }}" class="mt-5 grid gap-3 md:grid-cols-8">
                 <input
-                    type="text"
+                    type="search"
                     name="q"
                     value="{{ $filters['q'] ?? '' }}"
                     placeholder="Cari kode, tamu, layanan, agent"
-                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10" maxlength="100"
                 >
 
                 <select name="agent_id" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
@@ -56,8 +56,8 @@
 
                 <select name="status" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                     <option value="">Semua Status</option>
-                    @foreach (['pending','checked_in_front_desk','in_progress','completed','expired_front_desk'] as $status)
-                        <option value="{{ $status }}" {{ ($filters['status'] ?? '') === $status ? 'selected' : '' }}>{{ str_replace('_', ' ', $status) }}</option>
+                    @foreach (['pending' => 'Menunggu', 'checked_in_front_desk' => 'Sudah Check-In', 'in_progress' => 'Sedang Berlangsung', 'completed' => 'Selesai', 'expired_front_desk' => 'Kedaluwarsa', 'dialihkan_ke_l2' => 'Dialihkan ke L2'] as $status => $label)
+                        <option value="{{ $status }}" {{ ($filters['status'] ?? '') === $status ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
 
@@ -72,7 +72,7 @@
                 <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
 
                 <button type="submit" class="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700">Terapkan</button>
-                <a href="{{ route('pimpinan.laporan') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Reset</a>
+                        <a href="{{ route('pimpinan.laporan') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Atur Ulang</a>
 
                 @php($printQuery = request()->except('page'))
                 <a
@@ -105,7 +105,7 @@
                                 <td class="px-4 py-3">{{ $row->jenis_layanan }}</td>
                                 <td class="px-4 py-3">{{ optional($row->agent)->name ?? '-' }}</td>
                                 <td class="px-4 py-3">
-                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-700">{{ str_replace('_', ' ', $row->status) }}</span>
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-700">{{ $row->status }}</span>
                                 </td>
                             </tr>
                         @empty
@@ -125,3 +125,4 @@
 </div>
 
 @endsection
+

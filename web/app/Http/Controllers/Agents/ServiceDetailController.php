@@ -7,6 +7,7 @@ use App\Models\Reservation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ServiceDetailController extends Controller
 {
@@ -14,12 +15,20 @@ class ServiceDetailController extends Controller
     {
         $agentId = Auth::guard('agent')->id();
 
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:pending,checked_in_front_desk,in_progress,completed,expired_front_desk,dialihkan_ke_l2'],
+            'rate' => ['nullable', 'string', 'max:50'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+        ]);
+
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'status' => trim((string) $request->query('status', '')),
-            'rate' => trim((string) $request->query('rate', '')),
-            'date_from' => trim((string) $request->query('date_from', '')),
-            'date_to' => trim((string) $request->query('date_to', '')),
+            'q' => trim((string) ($validated['q'] ?? '')),
+            'status' => $validated['status'] ?? '',
+            'rate' => trim((string) ($validated['rate'] ?? '')),
+            'date_from' => $validated['date_from'] ?? '',
+            'date_to' => $validated['date_to'] ?? '',
         ];
 
         $query = Reservation::query()
@@ -78,7 +87,9 @@ class ServiceDetailController extends Controller
                 $durationLabel = gmdate('H:i:s', $durationSeconds) . ' (berjalan)';
             }
 
-            $tamuLampiranUrl = $reservation->lampiran ? asset('storage/' . ltrim($reservation->lampiran, '/')) : null;
+            $tamuLampiranUrl = $reservation->lampiran
+                ? route('agent.file.download', ['reservation' => $reservation, 'type' => 'tamu'])
+                : null;
 
             return [
                 'kode_reservasi' => $reservation->kode_reservasi,
@@ -87,13 +98,15 @@ class ServiceDetailController extends Controller
                 'jabatan' => $reservation->jabatan,
                 'jenis_layanan' => $reservation->jenis_layanan,
                 'detail_keperluan' => $reservation->detail_keperluan,
-                'status' => str_replace('_', ' ', $reservation->status),
+                'status' => $reservation->status_label,
                 'tanggal_jam' => Carbon::parse($reservation->tanggal_jam)->translatedFormat('d F Y, H:i') . ' WIB',
                 'waktu_mulai_tatap_muka' => $startTime ? Carbon::parse($startTime)->translatedFormat('d F Y, H:i:s') . ' WIB' : '-',
                 'waktu_selesai_tatap_muka' => $endTime ? Carbon::parse($endTime)->translatedFormat('d F Y, H:i:s') . ' WIB' : '-',
                 'durasi_tatap_muka' => $durationLabel,
                 'catatan_teks' => $noteText ?: '-',
-                'catatan_file_url' => $noteFilePath ? asset('storage/' . ltrim($noteFilePath, '/')) : null,
+                'catatan_file_url' => $noteFilePath
+                                    ? route('agent.file.download', ['reservation' => $reservation, 'type' => 'catatan'])
+                                    : null,
                 'catatan_file_name' => $noteFilePath ? basename($noteFilePath) : '-',
                 'tamu_lampiran_url' => $tamuLampiranUrl,
                 'tamu_lampiran_name' => $reservation->lampiran ? basename($reservation->lampiran) : '-',
@@ -106,5 +119,19 @@ class ServiceDetailController extends Controller
             'reservations' => $reservations,
             'filters' => $filters,
         ]);
+    }
+
+    public function downloadFile(Reservation $reservation, string $type)
+    {
+        abort_unless($reservation->agent_id === Auth::guard('agent')->id(), 404);
+        abort_unless(in_array($type, ['tamu', 'catatan'], true), 404);
+
+        $path = $type === 'tamu'
+            ? $reservation->lampiran
+            : data_get(json_decode((string) $reservation->catatan_tatap_muka, true), 'file');
+
+        abort_unless(is_string($path) && $path !== '' && Storage::disk('public')->exists($path), 404);
+
+        return Storage::disk('public')->download($path, basename($path));
     }
 }

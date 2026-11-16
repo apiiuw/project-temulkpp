@@ -25,11 +25,11 @@
 
             <form method="GET" action="{{ route('superadmin.layanan-selesai') }}" class="mt-5 grid gap-3 md:grid-cols-6">
                 <input
-                    type="text"
+                    type="search"
                     name="q"
                     value="{{ $filters['q'] ?? '' }}"
                     placeholder="Cari kode, nama tamu, agent"
-                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10" maxlength="255"
                 >
                 <select name="agent_id" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                     <option value="">Semua Agent</option>

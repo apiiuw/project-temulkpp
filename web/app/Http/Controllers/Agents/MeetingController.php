@@ -43,7 +43,9 @@ class MeetingController extends Controller
         $endTime = $startTime->copy()->addSeconds($sessionDurationSeconds);
         $sessionDurationLabel = gmdate('i:s', $sessionDurationSeconds);
 
-        $tamuLampiranUrl = $reservation->lampiran ? asset('storage/' . ltrim($reservation->lampiran, '/')) : null;
+        $tamuLampiranUrl = $reservation->lampiran
+            ? route('agent.file.download', ['reservation' => $reservation, 'type' => 'tamu'])
+            : null;
 
         return view('roles.agents.meeting.show', [
             'title' => 'Tatap Muka - ' . $reservation->nama_lengkap,

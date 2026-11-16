@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Users;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
+use App\Models\AgentSchedule;
 use App\Models\Reservation;
 use App\Models\ServiceType;
 use App\Models\ReservationSetting;
@@ -28,7 +29,7 @@ class ReservasiController extends Controller
                 ->groupBy(fn (Reservation $reservation) => Carbon::parse($reservation->tanggal_jam)->format('Y-m-d'))
                 ->map(fn ($reservations) => $reservations
                     ->groupBy(fn (Reservation $reservation) => Carbon::parse($reservation->tanggal_jam)->format('H:i'))
-                    ->filter(fn ($group) => $group->count() >= 7)
+                    ->filter(fn ($group) => $group->count() >= $this->maxReservationsPerSlot())
                     ->keys()
                     ->all()
                 );
@@ -81,7 +82,7 @@ class ReservasiController extends Controller
             ])->withInput();
         }
 
-        $maxPerSlot = (int) (ReservationSetting::where('key', 'max_reservations_per_slot')->value('value') ?? 7);
+        $maxPerSlot = $this->maxReservationsPerSlot();
 
         if (Reservation::where('tanggal_jam', $reservationDateTime->format('Y-m-d H:i:s'))->count() >= $maxPerSlot) {
             return back()->withErrors([
@@ -90,11 +91,12 @@ class ReservasiController extends Controller
         }
 
         $validatedData['tanggal_jam'] = $reservationDateTime->format('Y-m-d H:i:s');
+        $validatedData['tahun'] = $reservationDateTime->year;
 
-        $kode_reservasi = 'RES-' . date('Ymd') . '-' . strtoupper(Str::random(4));
+        $kode_reservasi = 'RES-' . $reservationDateTime->format('Ymd') . '-' . strtoupper(Str::random(4));
 
         while (Reservation::where('kode_reservasi', $kode_reservasi)->exists()) {
-            $kode_reservasi = 'RES-' . date('Ymd') . '-' . strtoupper(Str::random(4));
+            $kode_reservasi = 'RES-' . $reservationDateTime->format('Ymd') . '-' . strtoupper(Str::random(4));
         }
 
         $validatedData['kode_reservasi'] = $kode_reservasi;
@@ -171,6 +173,11 @@ class ReservasiController extends Controller
         return $times;
     }
 
+    private function maxReservationsPerSlot(): int
+    {
+        return (int) (ReservationSetting::where('key', 'max_reservations_per_slot')->value('value') ?? 7);
+    }
+
     private function resolveAssignedAgentId(Carbon $reservationDateTime): ?int
     {
         $assignedAgentIdsInSlot = Reservation::query()
@@ -178,58 +185,78 @@ class ReservasiController extends Controller
             ->whereNotNull('agent_id')
             ->pluck('agent_id');
 
-        $candidateAgents = Agent::query()
+        $scheduledAgentIds = $this->scheduledAgentIdsFor($reservationDateTime);
+
+        $withCounts = fn ($query) => $query->withCount([
+            'reservations as same_day_reservations_count' => fn ($countQuery) => $countQuery
+                ->whereDate('tanggal_jam', $reservationDateTime->toDateString()),
+            'reservations as same_week_reservations_count' => fn ($countQuery) => $countQuery
+                ->whereBetween('tanggal_jam', [
+                    $reservationDateTime->copy()->startOfWeek(),
+                    $reservationDateTime->copy()->endOfWeek(),
+                ]),
+            'reservations as active_reservations_count' => fn ($countQuery) => $countQuery
+                ->whereIn('status', ['pending', 'checked_in_front_desk', 'in_progress']),
+            'reservations as total_reservations_count',
+        ]);
+
+        $availableQuery = fn () => Agent::query()
             ->when(
                 $assignedAgentIdsInSlot->isNotEmpty(),
                 fn ($query) => $query->whereNotIn('id', $assignedAgentIdsInSlot)
-            )
-            ->withCount([
-                'reservations as same_day_reservations_count' => fn ($query) => $query
-                    ->whereDate('tanggal_jam', $reservationDateTime->toDateString()),
-                'reservations as active_reservations_count' => fn ($query) => $query
-                    ->whereIn('status', ['pending', 'checked_in_front_desk', 'in_progress']),
-            ])
-            ->get();
+            );
 
+        // 1. Agent terjadwal tetap untuk hari + jam ini, kecuali yang sudah dischedule jam ini.
+        $candidateAgents = $withCounts(
+            $availableQuery()->when(
+                $scheduledAgentIds->isNotEmpty(),
+                fn ($query) => $query->whereIn('id', $scheduledAgentIds)
+            )
+        )->get();
+
+        // 2. Slot tidak punya jadwal tetap atau semua terjadwal sudah terpakai: pakai semua agent yang bebas jam ini.
         if ($candidateAgents->isEmpty()) {
-            $candidateAgents = Agent::query()
-                ->withCount([
-                    'reservations as same_day_reservations_count' => fn ($query) => $query
-                        ->whereDate('tanggal_jam', $reservationDateTime->toDateString()),
-                    'reservations as active_reservations_count' => fn ($query) => $query
-                        ->whereIn('status', ['pending', 'checked_in_front_desk', 'in_progress']),
-                ])
-                ->get();
+            $candidateAgents = $withCounts($availableQuery())->get();
         }
 
-        return $this->pickFairAgentId($candidateAgents, $reservationDateTime);
+        // 3. Semua agent sudah terpakai di jam ini: tetap isi dengan agent beban paling ringan.
+        if ($candidateAgents->isEmpty()) {
+            $candidateAgents = $withCounts(Agent::query())->get();
+        }
+
+        return $this->pickFairAgentId($candidateAgents);
     }
 
-    private function pickFairAgentId(Collection $candidateAgents, Carbon $reservationDateTime): ?int
+    /**
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    private function scheduledAgentIdsFor(Carbon $dateTime): Collection
+    {
+        return AgentSchedule::query()
+            ->where('day', $dateTime->isoWeekday())
+            ->where('time', $dateTime->format('H:i'))
+            ->where('parity', (int) $dateTime->isoWeek() % 2)
+            ->pluck('agent_id');
+    }
+
+    /**
+     * Pilih agent dengan beban paling ringan, tanpa acak:
+     * hari yang sama -> minggu yang sama -> sesi aktif -> total -> id terkecil.
+     */
+    private function pickFairAgentId(Collection $candidateAgents): ?int
     {
         if ($candidateAgents->isEmpty()) {
             return null;
         }
 
-        $minSameDayCount = $candidateAgents->min('same_day_reservations_count');
-        $sameDayPool = $candidateAgents
-            ->where('same_day_reservations_count', $minSameDayCount)
-            ->values();
-
-        $minActiveCount = $sameDayPool->min('active_reservations_count');
-        $fairPool = $sameDayPool
-            ->where('active_reservations_count', $minActiveCount)
-            ->sortBy('id')
-            ->values();
-
-        if ($fairPool->count() === 1) {
-            return $fairPool->first()->id;
-        }
-
-        $poolSignature = $fairPool->pluck('id')->implode('-');
-        $seed = crc32($reservationDateTime->format('Y-m-d H:i') . '|' . $poolSignature);
-        $index = abs((int) $seed) % $fairPool->count();
-
-        return $fairPool->get($index)?->id;
+        return $candidateAgents
+            ->sortBy([
+                ['same_day_reservations_count', 'asc'],
+                ['same_week_reservations_count', 'asc'],
+                ['active_reservations_count', 'asc'],
+                ['total_reservations_count', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->first()?->id;
     }
 }

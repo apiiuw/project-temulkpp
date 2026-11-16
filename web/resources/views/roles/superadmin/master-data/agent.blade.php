@@ -27,11 +27,11 @@
             </div>
             <div class="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
                 <p class="text-xs font-bold uppercase tracking-widest text-stone-400">Agent Aktif</p>
-                <p class="mt-2 text-3xl font-black text-green-600">{{ \App\Models\Agent::where('is_active', true)->count() }}</p>
+                <p class="mt-2 text-3xl font-black text-green-600">{{ $activeAgentCount }}</p>
             </div>
             <div class="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
                 <p class="text-xs font-bold uppercase tracking-widest text-stone-400">Non-Aktif</p>
-                <p class="mt-2 text-3xl font-black text-stone-400">{{ \App\Models\Agent::where('is_active', false)->count() }}</p>
+                <p class="mt-2 text-3xl font-black text-stone-400">{{ $inactiveAgentCount }}</p>
             </div>
         </div>
 
@@ -46,7 +46,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </span>
-                        <input type="text" name="q" value="{{ $filters['q'] }}" placeholder="Nama atau Email..." class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 pl-11 pr-4 text-sm focus:border-amber-500 focus:ring-amber-500">
+                        <input type="search" name="q" value="{{ $filters['q'] }}" placeholder="Nama atau Email..." class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 pl-11 pr-4 text-sm focus:border-amber-500 focus:ring-amber-500" maxlength="255">
                     </div>
                 </div>
                 <div class="w-full md:w-48">
@@ -124,7 +124,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
-                                        <form action="{{ route('superadmin.master-agent.toggle-status', $agent) }}" method="POST" class="inline">
+                                        <form action="{{ route('superadmin.master-agent.toggle-status', $agent) }}" method="POST" class="inline" onsubmit="return confirm('{{ $agent->is_active ? 'Nonaktifkan agent ini?' : 'Aktifkan agent ini?' }}')">
                                             @csrf
                                             @method('PATCH')
                                             <button 
@@ -165,11 +165,9 @@
                 </table>
             </div>
             
-            @if($agents->hasPages())
-                <div class="border-t border-stone-100 bg-stone-50/50 px-6 py-4">
-                    {{ $agents->links() }}
-                </div>
-            @endif
+            <div class="border-t border-stone-100 bg-stone-50/50 px-6 py-4">
+                @include('partials.pagination', ['paginator' => $agents])
+            </div>
         </div>
     </div>
 </div>
@@ -191,15 +189,15 @@
                 @csrf
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Nama Lengkap</label>
-                    <input type="text" name="name" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="Contoh: Budi Santoso">
+                    <input type="text" name="name" maxlength="255" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="Contoh: Budi Santoso">
                 </div>
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Email Kerja</label>
-                    <input type="email" name="email" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="budi@lkpp.go.id">
+                    <input type="email" name="email" maxlength="255" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="budi@lkpp.go.id">
                 </div>
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Password</label>
-                    <input type="password" name="password" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="Minimal 8 karakter">
+                    <input type="password" name="password" minlength="8" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="Minimal 8 karakter">
                 </div>
                 <div class="flex items-center gap-3 py-2">
                     <input type="checkbox" name="is_active" id="is_active_add" checked value="1" class="h-5 w-5 rounded border-stone-300 text-amber-600 focus:ring-amber-500">
@@ -236,16 +234,16 @@
                 @method('PUT')
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Nama Lengkap</label>
-                    <input type="text" name="name" id="edit_name" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500">
+                    <input type="text" name="name" maxlength="255" id="edit_name" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500">
                 </div>
                 <div>
                     <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-stone-500">Email Kerja</label>
-                    <input type="email" name="email" id="edit_email" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500">
+                    <input type="email" name="email" maxlength="255" id="edit_email" required class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500">
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-stone-500">Ganti Password</label>
                     <p class="mb-2 text-[10px] text-stone-400 italic font-medium">*Kosongkan jika tidak ingin mengubah password</p>
-                    <input type="password" name="password" class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="Min 8 karakter">
+                    <input type="password" name="password" minlength="8" class="w-full rounded-2xl border-stone-200 bg-stone-50 py-3 px-4 text-sm focus:border-amber-500 focus:ring-amber-500" placeholder="Min 8 karakter">
                 </div>
                 <div class="flex items-center gap-3 py-2">
                     <input type="checkbox" name="is_active" id="edit_is_active" value="1" class="h-5 w-5 rounded border-stone-300 text-amber-600 focus:ring-amber-500">
@@ -279,7 +277,8 @@
 
     function openEditModal(agent) {
         const form = document.getElementById('editAgentForm');
-        form.action = `/superadmin/master-data/agent/${agent.id}`;
+        form.action = @json(route('superadmin.master-agent.update', ['agent' => '__AGENT__']))
+                    .replace('__AGENT__', agent.id);
         
         document.getElementById('edit_name').value = agent.name;
         document.getElementById('edit_email').value = agent.email;

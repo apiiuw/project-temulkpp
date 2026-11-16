@@ -18,18 +18,18 @@
                         <p class="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">Filter Jadwal</p>
                         <h2 class="mt-2 text-xl font-black text-stone-900">Cari reservasi agent</h2>
                     </div>
-                    <a href="{{ route('agent.jadwal') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Reset</a>
+                    <a href="{{ route('agent.jadwal') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Atur Ulang</a>
                 </div>
 
                 <form method="GET" action="{{ route('agent.jadwal') }}" class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                     <label class="block xl:col-span-2">
-                        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Search</span>
+                        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Pencarian</span>
                         <input
                             type="search"
                             name="q"
                             value="{{ $filters['q'] ?? '' }}"
                             placeholder="Kode, nama, instansi, jabatan, layanan"
-                            class="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-red-400"
+                            class="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-red-400" maxlength="255"
                         >
                     </label>
 
@@ -37,7 +37,7 @@
                         <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Status</span>
                         <select name="status" class="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-red-400">
                             <option value="">Semua Status</option>
-                            @foreach (['pending' => 'Pending', 'checked_in_front_desk' => 'Sudah Check-In', 'in_progress' => 'Sedang Berlangsung', 'completed' => 'Selesai', 'expired_front_desk' => 'Kadaluarsa'] as $value => $label)
+                            @foreach (['pending' => 'Menunggu', 'checked_in_front_desk' => 'Sudah Check-In', 'in_progress' => 'Sedang Berlangsung', 'completed' => 'Selesai', 'expired_front_desk' => 'Kedaluwarsa', 'dialihkan_ke_l2' => 'Dialihkan ke L2'] as $value => $label)
                                 <option value="{{ $value }}" {{ ($filters['status'] ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -96,7 +96,7 @@
                                             {{ $reservation->status === 'in_progress' ? 'bg-orange-100 text-orange-700' : '' }}
                                             {{ $reservation->status === 'completed' ? 'bg-stone-100 text-stone-700' : '' }}
                                             {{ in_array($reservation->status, ['pending', 'expired_front_desk'], true) ? 'bg-red-100 text-red-700' : '' }}">
-                                            {{ str_replace('_', ' ', $reservation->status) }}
+                                            {{ $reservation->status_label }}
                                         </span>
                                     </td>
                                     <td class="px-4 py-4">
@@ -119,10 +119,10 @@
                                                 'asal_pt' => $reservation->asal_pt,
                                                 'jabatan' => $reservation->jabatan,
                                                 'jenis_layanan' => $reservation->jenis_layanan,
-                                                'status' => str_replace('_', ' ', $reservation->status),
+                                                'status' => $reservation->status_label,
                                                 'tanggal_jam' => \Carbon\Carbon::parse($reservation->tanggal_jam)->translatedFormat('d F Y, H:i') . ' WIB',
                                                 'detail_keperluan' => $reservation->detail_keperluan,
-                                                'tamu_lampiran_url' => $reservation->lampiran ? asset('storage/' . ltrim($reservation->lampiran, '/')) : null,
+                                                'tamu_lampiran_url' => $reservation->lampiran ? route('agent.file.download', ['reservation' => $reservation, 'type' => 'tamu']) : null,
                                                 'tamu_lampiran_name' => $reservation->lampiran ? basename($reservation->lampiran) : '-',
                                             ], (function() use ($reservation) {
                                                 $notePayload = json_decode((string) $reservation->catatan_tatap_muka, true);
@@ -131,7 +131,7 @@
                                                     $noteFilePath = $notePayload['file'] ?? null;
                                                 }
                                                 return [
-                                                    'catatan_file_url' => $noteFilePath ? asset('storage/' . ltrim($noteFilePath, '/')) : null,
+                                                    'catatan_file_url' => $noteFilePath ? route('agent.file.download', ['reservation' => $reservation, 'type' => 'catatan']) : null,
                                                     'catatan_file_name' => $noteFilePath ? basename($noteFilePath) : '-',
                                                 ];
                                             })())) }}"
@@ -172,7 +172,7 @@
                                     <td class="px-4 py-4 font-bold text-stone-900">{{ $reservation->kode_reservasi }}</td>
                                     <td class="px-4 py-4">{{ $reservation->nama_lengkap }}</td>
                                     <td class="px-4 py-4">
-                                        <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-stone-700">{{ str_replace('_', ' ', $reservation->status) }}</span>
+                                        <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-stone-700">{{ $reservation->status_label }}</span>
                                     </td>
                                     <td class="px-4 py-4">
                                         <button
@@ -184,10 +184,10 @@
                                                 'asal_pt' => $reservation->asal_pt,
                                                 'jabatan' => $reservation->jabatan,
                                                 'jenis_layanan' => $reservation->jenis_layanan,
-                                                'status' => str_replace('_', ' ', $reservation->status),
+                                                'status' => $reservation->status_label,
                                                 'tanggal_jam' => \Carbon\Carbon::parse($reservation->tanggal_jam)->translatedFormat('d F Y, H:i') . ' WIB',
                                                 'detail_keperluan' => $reservation->detail_keperluan,
-                                                'tamu_lampiran_url' => $reservation->lampiran ? asset('storage/' . ltrim($reservation->lampiran, '/')) : null,
+                                                'tamu_lampiran_url' => $reservation->lampiran ? route('agent.file.download', ['reservation' => $reservation, 'type' => 'tamu']) : null,
                                                 'tamu_lampiran_name' => $reservation->lampiran ? basename($reservation->lampiran) : '-',
                                             ], (function() use ($reservation) {
                                                 $notePayload = json_decode((string) $reservation->catatan_tatap_muka, true);
@@ -196,7 +196,7 @@
                                                     $noteFilePath = $notePayload['file'] ?? null;
                                                 }
                                                 return [
-                                                    'catatan_file_url' => $noteFilePath ? asset('storage/' . ltrim($noteFilePath, '/')) : null,
+                                                    'catatan_file_url' => $noteFilePath ? route('agent.file.download', ['reservation' => $reservation, 'type' => 'catatan']) : null,
                                                     'catatan_file_name' => $noteFilePath ? basename($noteFilePath) : '-',
                                                 ];
                                             })())) }}"
@@ -210,6 +210,9 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+                <div class="mt-6">
+                    {{ $upcomingReservations->links() }}
                 </div>
             </section>
         </div>
@@ -349,3 +352,4 @@
 @endpush
 
 @endsection
+

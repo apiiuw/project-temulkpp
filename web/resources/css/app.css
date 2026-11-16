@@ -57,4 +57,547 @@
   .sidebar-collapsed .sidebar-mini-logo {
     display: block !important;
   }
+
+  .app-mobile-header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 60;
+    display: flex;
+    min-height: 4rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid rgb(231 229 228 / 0.9);
+    background: rgb(255 253 248 / 0.92);
+    padding: 0.65rem 1rem;
+    box-shadow: 0 8px 24px rgb(28 25 23 / 0.08);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+
+  .app-mobile-menu-button {
+    display: inline-flex;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(214 211 209);
+    border-radius: 0.85rem;
+    background: rgb(255 255 255 / 0.92);
+    color: rgb(68 64 60);
+    box-shadow: 0 4px 12px rgb(28 25 23 / 0.08);
+    transition: transform 180ms ease, background-color 180ms ease;
+  }
+
+  .app-mobile-menu-button:active {
+    transform: scale(0.96);
+  }
+
+  .app-menu-icon {
+    display: grid;
+    gap: 0.22rem;
+    width: 1.2rem;
+  }
+
+  .app-menu-icon span {
+    display: block;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .app-sidebar-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    z-index: 2;
+    display: none;
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(255 255 255 / 0.18);
+    border-radius: 0.8rem;
+    background: rgb(255 255 255 / 0.08);
+    color: rgb(255 255 255 / 0.85);
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .app-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    background: rgb(12 10 9 / 0.52);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+
+  .app-content {
+    overscroll-behavior-y: contain;
+  }
+
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .overflow-x-auto table {
+    min-width: 42rem;
+  }
+
+  .public-layout img,
+  .public-layout video,
+  body:not(.public-layout) img {
+    max-width: 100%;
+  }
+
+  :where(input, select, textarea, button) {
+    max-width: 100%;
+  }
+}
+
+@layer base {
+  html {
+    overflow-x: clip;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-width: 320px;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  button:not(:disabled),
+  input[type='button']:not(:disabled),
+  input[type='submit']:not(:disabled),
+  input[type='reset']:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input[type='button']:disabled,
+  input[type='submit']:disabled,
+  input[type='reset']:disabled,
+  [role='button'][aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(220 38 38 / 0.45);
+    outline-offset: 2px;
+  }
+}
+
+/* Keep the full navigation drawer for wide desktop only. A docked browser
+   DevTools pane can reduce the viewport below 1280px, so tablet mode must
+   use the mobile header and drawer instead of squeezing content beside 384px. */
+@media (max-width: 1279px) {
+  .app-sidebar-drawer {
+    position: fixed !important;
+    inset: 0 auto 0 0;
+    z-index: 70;
+    display: flex !important;
+    width: min(88vw, 24rem) !important;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateX(-105%);
+    visibility: hidden;
+    box-shadow: 18px 0 48px rgb(28 25 23 / 0.2);
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), visibility 240ms ease;
+  }
+
+  .app-sidebar-close {
+    display: inline-flex;
+  }
+
+  body.mobile-sidebar-open {
+    overflow: hidden;
+  }
+
+  body.mobile-sidebar-open .app-sidebar-drawer {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  body.mobile-sidebar-open .app-sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  .sidebar-collapsed .app-sidebar-drawer {
+    width: min(88vw, 24rem) !important;
+  }
+
+  .sidebar-collapsed .app-sidebar-drawer .sidebar-hide-content {
+    display: block !important;
+    opacity: 1;
+  }
+
+  .sidebar-collapsed .app-sidebar-drawer .sidebar-full-logo {
+    display: block !important;
+  }
+
+  .sidebar-collapsed .app-sidebar-drawer .sidebar-mini-logo {
+    display: none !important;
+  }
+
+  /* Mobile drawers always use the full navigation layout, regardless of the desktop preference. */
+  .app-sidebar-drawer,
+  .app-sidebar-drawer > div,
+  .app-sidebar-drawer nav {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+  .app-sidebar-drawer .sidebar-hide-content {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  .app-sidebar-drawer .sidebar-center-content {
+    justify-content: flex-start !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .app-sidebar-drawer .sidebar-full-logo {
+    display: block !important;
+  }
+
+  .app-sidebar-drawer .sidebar-mini-logo {
+    display: none !important;
+  }
+
+  .app-content {
+    min-height: 100dvh;
+    height: auto;
+    overflow: visible !important;
+  }
+
+  .app-content > .px-4 {
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-right: clamp(1rem, 3vw, 2rem);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1279px) {
+  .app-mobile-header {
+    min-height: 4.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .app-content {
+    padding-top: 4.5rem !important;
+  }
+
+  .public-layout > nav > div {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-mobile-header {
+    min-height: 3.75rem;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .app-content {
+    padding-top: 3.75rem !important;
+  }
+
+  .public-layout > nav > div {
+    padding-top: 0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .public-layout > nav > div > div {
+    border-radius: 1rem;
+    padding: 0.5rem;
+  }
+
+  .public-layout > nav img {
+    height: 2.25rem;
+  }
+
+  .public-layout > nav ul {
+    border-radius: 1rem;
+  }
+
+  .public-layout > nav a {
+    min-height: 2.75rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .public-layout > footer {
+    margin-top: -3rem;
+  }
+
+  .public-layout > footer > div {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .public-layout > footer > div > div {
+    align-items: stretch;
+    border-radius: 1rem;
+    padding: 0.9rem;
+  }
+
+  .public-layout > footer ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-layout > footer li,
+  .public-layout > footer a {
+    width: 100%;
+  }
+
+  .public-layout > footer a {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .app-content .rounded-4xl,
+  .app-content [class*="rounded-[28px]"],
+  .app-content [class*="rounded-[30px]"] {
+    border-radius: 1.25rem;
+  }
+
+  .app-content [class*="min-h-[1050px]"],
+  .app-content [class*="min-h-[750px]"] {
+    min-height: 31rem;
+  }
+
+  #superset-container iframe {
+    height: 31rem !important;
+  }
+
+  .app-content table {
+    min-width: 42rem;
+    font-size: 0.8125rem;
+  }
+
+  .app-content .overflow-hidden:has(table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-content th,
+  .app-content td {
+    white-space: nowrap;
+  }
+
+  /* Empty-state cells span the whole table — which is forced to a 42rem min
+     width — so a centred message lands in the off-screen half and looks cut
+     off. Wrap it and anchor it left instead. Unlayered on purpose so it beats
+     the `text-center` utility on those cells. */
+  .app-content td[colspan] {
+    white-space: normal;
+    text-align: left;
+  }
+
+  /* Every colspan cell in this app is an @empty row. On a phone the header
+     row alone (5-7 nowrap-ish columns incl. padding) is wider than the card,
+     which is what shoves the empty-state message off-screen. Since there are
+     no rows to describe, drop the headers on mobile so the message gets the
+     full card width and wraps normally. */
+  .app-content table:has(td[colspan]) {
+    min-width: 0;
+  }
+
+  .app-content table:has(td[colspan]) thead {
+    display: none;
+  }
+
+  .app-content .overflow-hidden:has(.responsive-data-table) {
+    overflow-x: visible;
+  }
+
+  .app-content table.responsive-data-table {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .responsive-data-table thead {
+    display: none;
+  }
+
+  .responsive-data-table tbody {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .responsive-data-table tr {
+    display: grid;
+    gap: 0.55rem;
+    border: 1px solid rgb(231 229 228);
+    border-radius: 0.9rem;
+    background: rgb(255 255 255 / 0.9);
+    padding: 0.8rem 0.9rem;
+  }
+
+  .responsive-data-table td {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 0 !important;
+    padding: 0 !important;
+    white-space: normal !important;
+    text-align: right;
+  }
+
+  .responsive-data-table td::before {
+    flex: 0 0 auto;
+    color: rgb(120 113 108);
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  #layanan-selesai .responsive-data-table td:nth-child(1)::before {
+    content: 'Waktu selesai';
+  }
+
+  #layanan-selesai .responsive-data-table td:nth-child(2)::before {
+    content: 'Kode';
+  }
+
+  #layanan-selesai .responsive-data-table td:nth-child(3)::before {
+    content: 'Nama';
+  }
+
+  #layanan-tidak-selesai .responsive-data-table td:nth-child(1)::before {
+    content: 'Waktu';
+  }
+
+  #layanan-tidak-selesai .responsive-data-table td:nth-child(2)::before {
+    content: 'Kode';
+  }
+
+  #layanan-tidak-selesai .responsive-data-table td:nth-child(3)::before {
+    content: 'Status';
+  }
+
+  #performa-agent .responsive-data-table td:nth-child(1)::before {
+    content: 'Agent';
+  }
+
+  #performa-agent .responsive-data-table td:nth-child(2)::before {
+    content: 'Total';
+  }
+
+  #performa-agent .responsive-data-table td:nth-child(3)::before {
+    content: 'Selesai';
+  }
+
+  #performa-agent .responsive-data-table td:nth-child(4)::before {
+    content: 'Berjalan';
+  }
+
+  .app-content .text-5xl {
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+
+  .public-layout .max-w-4xl {
+    padding-top: 8.5rem;
+    padding-bottom: 9rem;
+  }
+
+  .public-layout .max-w-4xl > div > div {
+    padding: 1.25rem;
+  }
+
+  .public-layout h1 {
+    font-size: clamp(1.75rem, 8vw, 2.25rem);
+    line-height: 1.1;
+  }
+
+  .public-layout form {
+    min-width: 0;
+  }
+
+  .public-layout input,
+  .public-layout select,
+  .public-layout textarea {
+    font-size: 1rem;
+  }
+
+  .public-layout video {
+    min-height: 100%;
+  }
+
+  .app-mobile-header + .app-sidebar-backdrop {
+    display: block;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile (<=767px): stop wide content from blowing the layout out.
+   Auto grid tracks size themselves to their widest child's min-content, so a
+   `min-width: 42rem` table (or a long <select> option / nowrap label) drags
+   the whole page past the viewport — and because `html/body` use
+   `overflow-x: clip`, the overflow is silently cut off instead of scrollable.
+   Pin the track to the container so the table scrolls inside its own wrapper
+   instead. Declared inside `@layer components` on purpose: Tailwind utilities
+   such as `grid-cols-2` live in a later layer and must keep winning.
+---------------------------------------------------------------------------- */
+@layer components {
+  @media (max-width: 767px) {
+    .app-content .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-content .grid > * {
+      min-width: 0;
+    }
+
+    .app-content input,
+    .app-content select,
+    .app-content textarea {
+      min-width: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -35,18 +35,19 @@ class MenuSeeder extends Seeder
             ['name' => 'Pengaturan Reservasi', 'route' => 'superadmin.reservation-settings', 'category' => 'Superadmin', 'icon' => '<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>'],
             ['name' => 'Performa Agent (SA)', 'route' => 'superadmin.performa-agent', 'category' => 'Superadmin', 'icon' => '<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19v-2a4 4 0 0 1 4-4h1.5" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 19v-2a4 4 0 0 0-4-4h-1.5" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8.5 9a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0Z" /></svg>'],
             ['name' => 'Laporan Cetak (SA)', 'route' => 'superadmin.laporan', 'category' => 'Superadmin', 'icon' => '<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6.75 5.75h10.5a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5H6.75a1.5 1.5 0 0 1-1.5-1.5v-9.5a1.5 1.5 0 0 1 1.5-1.5Z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8.75 9.25h6.5M8.75 12h6.5M8.75 14.75h4" /></svg>'],
+            ['name' => 'Import Data Reservasi', 'route' => 'superadmin.reservation-import.index', 'category' => 'Superadmin', 'icon' => '<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 16V4m0 0L8 8m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" /></svg>'],
         ];
 
         foreach ($menus as $menuData) {
-            $menu = \App\Models\Menu::create($menuData);
+            $menu = \App\Models\Menu::updateOrCreate(['route' => $menuData['route']], $menuData);
             
             // Assign default permissions
             if ($menuData['category'] === 'Agent') {
-                \App\Models\RoleMenu::create(['role' => 'agent', 'menu_id' => $menu->id]);
+                \App\Models\RoleMenu::firstOrCreate(['role' => 'agent', 'menu_id' => $menu->id]);
             } elseif ($menuData['category'] === 'Pimpinan') {
-                \App\Models\RoleMenu::create(['role' => 'pimpinan', 'menu_id' => $menu->id]);
+                \App\Models\RoleMenu::firstOrCreate(['role' => 'pimpinan', 'menu_id' => $menu->id]);
             } elseif ($menuData['category'] === 'Superadmin') {
-                \App\Models\RoleMenu::create(['role' => 'superadmin', 'menu_id' => $menu->id]);
+                \App\Models\RoleMenu::firstOrCreate(['role' => 'superadmin', 'menu_id' => $menu->id]);
             }
         }
     }

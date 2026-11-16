@@ -4,6 +4,7 @@ namespace App\Http\Controllers\FrontDesk;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
+use App\Models\AgentSchedule;
 use App\Models\Reservation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -158,38 +159,48 @@ class ReservationCheckInController extends Controller
 
     private function resolveFallbackAgentId(Carbon $reservationTime): ?int
     {
-        $candidateAgents = Agent::query()
-            ->withCount([
-                'reservations as same_day_reservations_count' => fn ($query) => $query
-                    ->whereDate('tanggal_jam', $reservationTime->toDateString()),
-                'reservations as active_reservations_count' => fn ($query) => $query
-                    ->whereIn('status', ['pending', 'checked_in_front_desk', 'in_progress']),
-            ])
-            ->get();
+        $withCounts = fn ($query) => $query->withCount([
+            'reservations as same_day_reservations_count' => fn ($countQuery) => $countQuery
+                ->whereDate('tanggal_jam', $reservationTime->toDateString()),
+            'reservations as same_week_reservations_count' => fn ($countQuery) => $countQuery
+                ->whereBetween('tanggal_jam', [
+                    $reservationTime->copy()->startOfWeek(),
+                    $reservationTime->copy()->endOfWeek(),
+                ]),
+            'reservations as active_reservations_count' => fn ($countQuery) => $countQuery
+                ->whereIn('status', ['pending', 'checked_in_front_desk', 'in_progress']),
+            'reservations as total_reservations_count',
+        ]);
+
+        $scheduledAgentIds = AgentSchedule::query()
+            ->where('day', $reservationTime->isoWeekday())
+            ->where('time', $reservationTime->format('H:i'))
+            ->where('parity', (int) $reservationTime->isoWeek() % 2)
+            ->pluck('agent_id');
+
+        $candidateAgents = $withCounts(
+            Agent::query()->when(
+                $scheduledAgentIds->isNotEmpty(),
+                fn ($query) => $query->whereIn('id', $scheduledAgentIds)
+            )
+        )->get();
+
+        if ($candidateAgents->isEmpty()) {
+            $candidateAgents = $withCounts(Agent::query())->get();
+        }
 
         if ($candidateAgents->isEmpty()) {
             return null;
         }
 
-        $minSameDayCount = $candidateAgents->min('same_day_reservations_count');
-        $sameDayPool = $candidateAgents
-            ->where('same_day_reservations_count', $minSameDayCount)
-            ->values();
-
-        $minActiveCount = $sameDayPool->min('active_reservations_count');
-        $fairPool = $sameDayPool
-            ->where('active_reservations_count', $minActiveCount)
-            ->sortBy('id')
-            ->values();
-
-        if ($fairPool->count() === 1) {
-            return $fairPool->first()->id;
-        }
-
-        $poolSignature = $fairPool->pluck('id')->implode('-');
-        $seed = crc32($reservationTime->format('Y-m-d H:i') . '|' . $poolSignature);
-        $index = abs((int) $seed) % $fairPool->count();
-
-        return $fairPool->get($index)?->id;
+        return $candidateAgents
+            ->sortBy([
+                ['same_day_reservations_count', 'asc'],
+                ['same_week_reservations_count', 'asc'],
+                ['active_reservations_count', 'asc'],
+                ['total_reservations_count', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->first()?->id;
     }
 }

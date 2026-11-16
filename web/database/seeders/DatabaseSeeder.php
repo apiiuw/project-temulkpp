@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             PimpinanSeeder::class,
             SuperadminSeeder::class,
             MenuSeeder::class,
+            ReservationSettingSeeder::class,
+            AgentScheduleSeeder::class,
         ]);
 
     }

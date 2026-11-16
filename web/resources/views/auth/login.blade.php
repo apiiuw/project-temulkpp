@@ -13,8 +13,8 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(185,28,28,0.22),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(120,53,15,0.18),_transparent_34%),linear-gradient(140deg,#160f10_0%,#26191b_48%,#111113_100%)]">
-        <div class="relative flex min-h-screen items-center justify-center px-4 py-10">
+    <body class="min-h-dvh overflow-x-clip overflow-y-auto bg-[radial-gradient(circle_at_top_left,_rgba(185,28,28,0.22),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(120,53,15,0.18),_transparent_34%),linear-gradient(140deg,#160f10_0%,#26191b_48%,#111113_100%)]">
+        <div class="relative flex min-h-dvh items-center justify-center px-4 py-6 sm:py-10">
             <div class="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.04)_50%,transparent_100%)]"></div>
 
             <div class="relative z-10 grid w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/10 bg-white/8 shadow-[0_35px_120px_rgba(0,0,0,0.42)] backdrop-blur-xl lg:grid-cols-[1.05fr_0.95fr]">
@@ -25,7 +25,7 @@
                         </div>
                         <p class="mt-10 text-xs font-bold uppercase tracking-[0.34em] text-red-200">Akses Internal</p>
                         <h1 class="mt-4 max-w-lg text-4xl font-black leading-tight">
-                            Login internal portal TemuLKPP.
+                            Masuk ke Portal Internal TemuLKPP.
                         </h1>
                         <p class="mt-5 max-w-xl text-sm leading-relaxed text-white/72">
                             Akses portal anda dengan melakukan otentikasi terlebih dahulu.
@@ -48,11 +48,65 @@
                             </div>
                         @endif
 
+                        @if (!empty($activeSessions))
+                            <div class="mt-6 rounded-2xl border border-stone-200 bg-white/70 px-4 py-4">
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Sedang login di browser ini</p>
+                                <p class="mt-1 text-[11px] leading-relaxed text-stone-500">
+                                    Bisa masuk sebagai aktor lain tanpa harus logout.
+                                </p>
+
+                                <ul class="mt-3 space-y-2">
+                                    @foreach ($activeSessions as $activeSession)
+                                        <li class="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                                            <span class="min-w-0">
+                                                <span class="block truncate text-sm font-bold text-stone-800">
+                                                    {{ $activeSession['label'] }} · {{ $activeSession['name'] }}
+                                                </span>
+                                                <span class="block truncate text-xs text-stone-500">{{ $activeSession['email'] }}</span>
+                                            </span>
+
+                                            <span class="flex shrink-0 items-center gap-2">
+                                                <a
+                                                    href="{{ $activeSession['dashboard'] }}"
+                                                    class="rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-stone-700"
+                                                >
+                                                    Dashboard
+                                                </a>
+
+                                                <form method="POST" action="{{ route('logout') }}">
+                                                    @csrf
+                                                    <input type="hidden" name="guard" value="{{ $activeSession['guard'] }}">
+                                                    <button
+                                                        type="submit"
+                                                        class="rounded-lg border border-stone-300 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition-colors hover:border-stone-400 hover:text-stone-800"
+                                                    >
+                                                        Logout
+                                                    </button>
+                                                </form>
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+
+                                @if (count($activeSessions) > 1)
+                                    <form method="POST" action="{{ route('logout') }}" class="mt-3">
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            class="text-[11px] font-bold text-red-700 underline underline-offset-2 transition-colors hover:text-red-900"
+                                        >
+                                            Logout dari semua aktor
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endif
+
                         <form method="POST" action="{{ route('login.store') }}" class="mt-8 space-y-5">
                             @csrf
 
                             <div>
-                                <label for="email" class="block text-sm font-bold text-stone-800">Email Akun</label>
+                                <label for="email" class="block text-sm font-bold text-stone-800">Alamat Email</label>
                                 <input
                                     type="email"
                                     id="email"
@@ -66,15 +120,32 @@
                             </div>
 
                             <div>
-                                <label for="password" class="block text-sm font-bold text-stone-800">Password</label>
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    placeholder="Masukkan password akun"
-                                    class="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-900 outline-none transition-all duration-300 focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
-                                    required
-                                >
+                                <label for="password" class="block text-sm font-bold text-stone-800">Kata Sandi</label>
+                                <div class="relative mt-2">
+                                    <input
+                                        type="password"
+                                        id="password"
+                                        name="password"
+                                        placeholder="Masukkan password akun"
+                                        class="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 pr-12 text-sm font-semibold text-stone-900 outline-none transition-all duration-300 focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                                        required
+                                    >
+                                    <button
+                                        type="button"
+                                        id="toggle-password"
+                                        class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-stone-400 transition-colors hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
+                                        aria-label="Tampilkan password"
+                                        aria-pressed="false"
+                                    >
+                                        <svg id="password-eye-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.25 12s3.5-6 9.75-6 9.75 6 9.75 6-3.5 6-9.75 6-9.75-6-9.75-6Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                        <svg id="password-eye-closed" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m3 3 18 18M10.58 10.58a2 2 0 0 0 2.83 2.83M9.88 5.09A10.6 10.6 0 0 1 12 4.75c6.25 0 9.75 7.25 9.75 7.25a17.7 17.7 0 0 1-3.08 3.92M6.61 6.61C3.95 8.42 2.25 12 2.25 12s3.5 7.25 9.75 7.25c1.27 0 2.42-.25 3.45-.65" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
 
                             <label class="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-700">
@@ -93,6 +164,20 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                const passwordInput = document.getElementById('password');
+                const togglePassword = document.getElementById('toggle-password');
+                const eyeOpen = document.getElementById('password-eye-open');
+                const eyeClosed = document.getElementById('password-eye-closed');
+
+                togglePassword?.addEventListener('click', () => {
+                    const isVisible = passwordInput.type === 'text';
+                    passwordInput.type = isVisible ? 'password' : 'text';
+                    togglePassword.setAttribute('aria-pressed', String(!isVisible));
+                    togglePassword.setAttribute('aria-label', isVisible ? 'Tampilkan password' : 'Sembunyikan password');
+                    eyeOpen.classList.toggle('hidden', !isVisible);
+                    eyeClosed.classList.toggle('hidden', isVisible);
+                });
+
                 @if(session('error_inactive'))
                     Swal.fire({
                         icon: 'error',

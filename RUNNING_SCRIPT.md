@@ -1,90 +1,129 @@
-# Panduan Menjalankan Aplikasi Temu LKPP
+# Menjalankan TemuLKPP dengan Docker
 
-Dokumentasi ini menjelaskan langkah-langkah untuk menjalankan aplikasi Temu LKPP secara lengkap, mulai dari Backend Laravel, Frontend (NPM), hingga Sistem Analitik (Superset).
+Project ini menggunakan Docker untuk Laravel dan Apache Superset. Tidak perlu menjalankan `php artisan serve`, `npm run dev`, membuat Python virtualenv, atau menjalankan `superset run` secara manual.
 
----
+## Prasyarat
 
-## 📋 Persyaratan Sistem
-Pastikan perangkat Anda sudah terinstal:
-*   **PHP** (v8.2 atau terbaru)
-*   **MySQL** (Database: `temulkpp` sedang berjalan)
-*   **Node.js & NPM**
-*   **Python** (v3.9 - v3.11 disarankan untuk Superset)
+- Docker Desktop aktif
+- MySQL aktif di komputer host
+- Database `temulkpp` sudah dibuat
+- File `temulkpp.sql` sudah di-import
 
----
+## 1. Jalankan MySQL
 
-## 🚀 Langkah-langkah Menjalankan Aplikasi
+Pastikan MySQL aktif dan database `temulkpp` tersedia.
 
-Aplikasi ini membutuhkan **3 Jendela Terminal** yang berjalan secara bersamaan.
+Jika database belum dibuat:
 
-### Jendela 1: Backend Laravel (Server Utama)
-Jendela ini berfungsi untuk menjalankan inti aplikasi Laravel.
-1.  Buka Terminal dan masuk ke folder `web`.
-2.  Jalankan perintah berikut:
-    ```bash
-    php artisan serve
-    ```
-3.  **Status:** Biarkan terminal ini tetap terbuka. Aplikasi web dapat diakses di: `http://127.0.0.1:8000`
+```sql
+CREATE DATABASE temulkpp;
+```
 
-### Jendela 2: Frontend Assets (NPM)
-Jendela ini berfungsi untuk memproses tampilan (CSS/Javascript) agar aplikasi terlihat rapi.
-1.  Buka Terminal baru dan masuk ke folder `web`.
-2.  Jalankan perintah berikut:
-    ```bash
-    npm run dev
-    ```
-3.  **Status:** Biarkan terminal ini tetap terbuka selama Anda menggunakan aplikasi.
+Import file:
 
-### Jendela 3: Analitik Superset (Grafik & Statistik)
-Jendela ini berfungsi agar grafik dan statistik di dashboard (Agent, Pimpinan, Superadmin) dapat muncul.
-1.  Buka Terminal baru dan masuk ke folder `apache`.
-2.  Aktifkan lingkungan virtual Python:
-    ```powershell
-    .\venv\Scripts\activate
-    ```
-3.  Beritahu sistem lokasi file konfigurasi (PowerShell):
-    ```powershell
-    $env:SUPERSET_CONFIG_PATH = "$(Get-Location)\superset_config.py"
-    ```
-4.  Jalankan server grafik (Port 8088):
-    ```powershell
-    superset run -p 8088 --with-threads --reload --debugger
-    ```
-5.  **Status:** Biarkan terminal ini tetap terbuka. Grafik tidak akan muncul jika jendela ini tertutup.
+```text
+temulkpp.sql
+```
 
----
+## 2. Jalankan Apache Superset
 
-## 🔗 Daftar Akses Cepat
+Buka PowerShell pertama dari root project:
 
-| Layanan | URL Akses | Keterangan |
-| :--- | :--- | :--- |
-| **Halaman Reservasi** | `http://127.0.0.1:8000/reservasi` | Halaman utama untuk tamu membuat janji |
-| **Halaman Front Desk** | `http://127.0.0.1:8000/front-desk` | Digunakan petugas untuk check-in tamu |
-| **Halaman Login** | `http://127.0.0.1:8000/auth/login` | Portal masuk Agent, Pimpinan, dan Superadmin |
-| **Panel Analitik Apache Superset** | `http://127.0.0.1:8088` | Dashboard internal grafik (Admin) |
+```powershell
+cd apache
+docker compose up -d --build
+```
 
----
+Cek status:
 
-## 🔐 Daftar Akun Login
+```powershell
+docker compose ps
+```
 
-Gunakan akun berikut untuk masuk ke sistem melalui **Halaman Login**:
+Superset berjalan di:
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Superadmin** | `superadmin@temulkpp.com` | `password` |
-| **Agent** | `agent.1@temulkpp.com` | `Agent@12345` |
-| **Pimpinan** | `pimpinan.1@temulkpp.com` | `Pimpinan@12345` |
+```text
+http://localhost:8088
+```
 
-> [!TIP]
-> Terdapat 7 akun Agent (`agent.1` s/d `agent.7`) dan 3 akun Pimpinan (`pimpinan.1` s/d `pimpinan.3`) yang tersedia di database.
+## 3. Jalankan Laravel
 
+Buka PowerShell kedua dari root project:
 
----
+```powershell
+cd web
+docker compose up -d --build
+```
 
-## 💡 Catatan Penting
-*   **Urutan Jalankan:** Bebas, namun disarankan menjalankan Laravel (`php artisan serve`) terlebih dahulu.
-*   **Jika Grafik Error:** Pastikan Terminal Jendela 3 (Superset) sudah berjalan dengan status "Running".
-*   **Database:** Pastikan MySQL Anda aktif sebelum menjalankan `php artisan serve`.
+Cek status:
 
----
-*Dokumentasi ini dibuat untuk memudahkan operasional harian aplikasi Temu LKPP.*
+```powershell
+docker compose ps
+```
+
+Aplikasi Laravel berjalan di:
+
+```text
+http://localhost:8000
+```
+
+Frontend Vite berjalan di:
+
+```text
+http://localhost:5173
+```
+
+## 4. Urutan penggunaan
+
+1. MySQL aktif
+2. Container Superset aktif
+3. Container Laravel aktif
+4. Buka `http://localhost:8000`
+
+## 5. Melihat log
+
+Log Superset:
+
+```powershell
+cd apache
+docker compose logs -f superset
+```
+
+Log Laravel:
+
+```powershell
+cd web
+docker compose logs -f backend
+```
+
+## 6. Menghentikan aplikasi
+
+```powershell
+cd apache
+docker compose down
+
+cd ..\web
+docker compose down
+```
+
+Jangan gunakan `docker compose down -v` karena dapat menghapus data volume Docker.
+
+Jangan hapus file:
+
+```text
+apache/superset-data/superset.db
+```
+
+File tersebut menyimpan dashboard, chart, dataset, user, dan koneksi Superset.
+
+## 7. Jika ada perubahan source code
+
+Rebuild service yang terkait:
+
+```powershell
+cd apache
+docker compose up -d --build
+
+cd ..\web
+docker compose up -d --build
+```

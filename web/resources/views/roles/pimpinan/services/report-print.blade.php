@@ -168,7 +168,9 @@
         <table>
             <tr>
                 <td class="letterhead-logo-td">
-                    <img src="{{ public_path('img/icon/logo/logoBlackRed.png') }}" class="letterhead-logo">
+                    @if (is_file(public_path('img/icon/logo/logoBlackRed.png')))
+                        <img src="{{ public_path('img/icon/logo/logoBlackRed.png') }}" class="letterhead-logo" alt="Logo LKPP">
+                    @endif
                 </td>
                 <td class="letterhead-info-td">
                     <div class="letterhead-info">

@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureAgentUser;
+use App\Http\Middleware\EnsureMenuPermission;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'agent' => EnsureAgentUser::class,
+            'menu' => EnsureMenuPermission::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

@@ -13,15 +13,15 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="h-screen overflow-hidden bg-[linear-gradient(145deg,#f4f1eb_0%,#fffdf8_48%,#efe5d3_100%)] text-stone-900">
+    <body class="min-h-dvh overflow-x-clip bg-[linear-gradient(145deg,#f4f1eb_0%,#fffdf8_48%,#efe5d3_100%)] text-stone-900 xl:h-screen xl:overflow-hidden">
         <script>
-            if (localStorage.getItem('sidebar-collapsed') === 'true') {
+            if (window.matchMedia('(min-width: 1280px)').matches && localStorage.getItem('sidebar-collapsed') === 'true') {
                 document.body.classList.add('sidebar-collapsed');
             }
         </script>
-        <div class="flex h-screen">
+        <div class="flex min-h-dvh xl:h-screen">
             <div class="relative flex shrink-0">
-                @include('partials.sidebar')
+                @include('partials.sidebar', ['sidebarRole' => 'pimpinan'])
                 
                 <!-- Floating Toggle Button -->
                 <button 
@@ -32,7 +32,8 @@
                 </button>
             </div>
 
-            <main class="min-w-0 flex-1 overflow-y-auto">
+            <main class="app-content min-w-0 flex-1 overflow-visible pt-16 xl:overflow-y-auto xl:pt-0">
+                @include('partials.mobile-header', ['mobileRole' => 'Pimpinan'])
                 @yield('container')
             </main>
         </div>

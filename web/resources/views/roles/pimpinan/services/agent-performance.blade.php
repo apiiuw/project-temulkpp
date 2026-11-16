@@ -6,7 +6,7 @@
         <div class="rounded-4xl border border-stone-200/80 bg-white/90 p-6 shadow-[0_24px_60px_rgba(120,53,15,0.10)] backdrop-blur-xl sm:p-8">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.3em] text-red-700">Pimpinan Report</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.3em] text-red-700">Laporan Pimpinan</p>
                     <h1 class="mt-2 text-3xl font-black text-stone-900 sm:text-4xl">Performa Agent</h1>
                     <p class="mt-3 max-w-3xl text-sm leading-relaxed text-stone-600">
                         Perbandingan performa antar agent berdasarkan volume layanan, penyelesaian, dan layanan berjalan.
@@ -25,15 +25,15 @@
 
             <form method="GET" action="{{ route('pimpinan.performa-agent') }}" class="mt-5 grid gap-3 md:grid-cols-6">
                 <input
-                    type="text"
+                    type="search"
                     name="q"
                     value="{{ $filters['q'] ?? '' }}"
                     placeholder="Cari nama atau email agent"
-                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10" maxlength="100"
                 >
                 <input
                     type="number"
-                    min="0"
+                    min="0" max="1000000" step="1"
                     name="min_completed"
                     value="{{ $filters['min_completed'] ?? 0 }}"
                     placeholder="Minimal layanan selesai"
@@ -44,7 +44,7 @@
                     Hanya Agent Aktif
                 </label>
                 <button type="submit" class="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700">Terapkan</button>
-                <a href="{{ route('pimpinan.performa-agent') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Reset</a>
+                        <a href="{{ route('pimpinan.performa-agent') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Atur Ulang</a>
             </form>
 
             <div class="mt-6 overflow-hidden rounded-2xl border border-stone-200">
@@ -56,6 +56,8 @@
                             <th class="px-4 py-3">Selesai</th>
                             <th class="px-4 py-3">Berjalan</th>
                             <th class="px-4 py-3">Rasio Selesai</th>
+                            <th class="px-4 py-3">Rating</th>
+                            <th class="px-4 py-3">Dinilai</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,18 +69,25 @@
                                 <td class="px-4 py-3">{{ number_format($agent->completed_reservations_count) }}</td>
                                 <td class="px-4 py-3">{{ number_format($agent->active_reservations_count) }}</td>
                                 <td class="px-4 py-3">{{ $completionRate }}%</td>
+                                <td class="px-4 py-3 font-bold {{ $agent->average_rating !== null ? 'text-stone-900' : 'text-stone-400' }}">
+                                    @if ($agent->average_rating !== null)
+                                        {{ number_format((float) $agent->average_rating, 1) }}
+                                        <span class="text-amber-400">★</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 {{ $agent->rated_reservations_count > 0 ? 'text-stone-600' : 'text-stone-400' }}">
+                                    {{ number_format($agent->rated_reservations_count) }} dari {{ number_format($agent->completed_reservations_count) }}
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-stone-500">Belum ada data performa agent.</td>
+                                <td colspan="7" class="px-4 py-8 text-center text-stone-500">Belum ada data performa agent.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
-
-            <div class="mt-6">
-                {{ $agentPerformance->links() }}
             </div>
         </section>
     </div>

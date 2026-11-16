@@ -1,0 +1,16 @@
+.git
+.env*
+!.env.docker.example
+web/.env
+web/vendor
+web/node_modules
+apache/venv
+apache/__pycache__
+**/__pycache__
+**/*.pyc
+superset-data
+superset.db
+client-package
+node_modules
+vendor
+storage/logs/*

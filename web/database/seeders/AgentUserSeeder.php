@@ -10,7 +10,7 @@ class AgentUserSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (range(1, 7) as $number) {
+        foreach (range(1, 16) as $number) {
             Agent::updateOrCreate(
                 ['email' => "agent.{$number}@temulkpp.com"],
                 [

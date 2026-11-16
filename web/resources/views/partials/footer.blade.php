@@ -16,6 +16,11 @@
                         Atur Ulang Jadwal
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('penilaian') }}" class="inline-flex rounded-full border border-white/40 bg-white/78 px-4 py-2 text-gray-800 transition-all duration-300 hover:bg-red-50 hover:text-red-700">
+                        Penilaian
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

@@ -6,7 +6,7 @@
         <div class="rounded-4xl border border-stone-200/80 bg-white/90 p-6 shadow-[0_24px_60px_rgba(120,53,15,0.10)] backdrop-blur-xl sm:p-8">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.3em] text-red-700">Pimpinan Report</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.3em] text-red-700">Laporan Pimpinan</p>
                     <h1 class="mt-2 text-3xl font-black text-stone-900 sm:text-4xl">Rekap Layanan Selesai</h1>
                     <p class="mt-3 max-w-3xl text-sm leading-relaxed text-stone-600">
                         Daftar layanan yang telah dituntaskan oleh seluruh agent. Data ditampilkan secara global untuk kebutuhan monitoring pimpinan.
@@ -25,11 +25,11 @@
 
             <form method="GET" action="{{ route('pimpinan.layanan-selesai') }}" class="mt-5 grid gap-3 md:grid-cols-6">
                 <input
-                    type="text"
+                    type="search"
                     name="q"
                     value="{{ $filters['q'] ?? '' }}"
                     placeholder="Cari kode, nama tamu, agent"
-                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10" maxlength="100"
                 >
                 <select name="agent_id" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                     <option value="">Semua Agent</option>
@@ -40,7 +40,7 @@
                 <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                 <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                 <button type="submit" class="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700">Terapkan</button>
-                <a href="{{ route('pimpinan.layanan-selesai') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Reset</a>
+                        <a href="{{ route('pimpinan.layanan-selesai') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Atur Ulang</a>
             </form>
 
             <div class="mt-6 overflow-hidden rounded-2xl border border-stone-200">

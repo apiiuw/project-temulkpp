@@ -1,28 +1,47 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Pimpinan;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\BuildsRatingDashboard;
 use App\Models\Agent;
 use App\Models\Reservation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class DashboardController extends Controller
+final class DashboardController extends Controller
 {
-    private const ONGOING_STATUSES = ['pending', 'checked_in_front_desk', 'in_progress'];
+    use BuildsRatingDashboard;
+
+    private const ONGOING_STATUSES = ['pending', 'checked_in_front_desk', 'in_progress', 'dialihkan_ke_l2'];
+    private const VALID_STATUSES = [
+        'pending',
+        'checked_in_front_desk',
+        'in_progress',
+        'completed',
+        'expired_front_desk',
+        'dialihkan_ke_l2',
+    ];
+    private const MAX_EXPORT_ROWS = 100;
 
     public function index(): View
     {
+        $jenis = request()->query('data') === 'uji' ? 'uji' : 'historis';
+
         $completedReservations = Reservation::query()
+            ->jenisData($jenis)
             ->where('status', 'completed')
             ->latest('waktu_selesai_tatap_muka')
             ->limit(5)
             ->get();
 
         $unfinishedReservations = Reservation::query()
+            ->jenisData($jenis)
             ->whereIn('status', self::ONGOING_STATUSES)
             ->latest('tanggal_jam')
             ->limit(5)
@@ -31,31 +50,38 @@ class DashboardController extends Controller
 
         $agentPerformance = Agent::query()
             ->withCount([
-                'reservations as total_reservations_count',
-                'reservations as completed_reservations_count' => fn ($query) => $query->where('status', 'completed'),
-                'reservations as active_reservations_count' => fn ($query) => $query->whereIn('status', self::ONGOING_STATUSES),
+                'reservations as total_reservations_count' => fn ($query) => $query->jenisData($jenis),
+                'reservations as completed_reservations_count' => fn ($query) => $query->jenisData($jenis)->where('status', 'completed'),
+                'reservations as active_reservations_count' => fn ($query) => $query->jenisData($jenis)->whereIn('status', self::ONGOING_STATUSES),
             ])
             ->orderByDesc('completed_reservations_count')
-            ->orderByDesc('total_reservations_count')
             ->limit(5)
             ->get();
 
         return view('roles.pimpinan.dashboard.index', [
             'title' => 'Dashboard Pimpinan',
-            'completedCount' => Reservation::query()->where('status', 'completed')->count(),
-            'unfinishedCount' => Reservation::query()->whereIn('status', self::ONGOING_STATUSES)->count(),
+            'jenisData' => $jenis,
+            'completedCount' => Reservation::query()->jenisData($jenis)->where('status', 'completed')->count(),
+            'unfinishedCount' => Reservation::query()->jenisData($jenis)->whereIn('status', self::ONGOING_STATUSES)->count(),
             'completedReservations' => $completedReservations,
             'unfinishedReservations' => $unfinishedReservations,
             'agentPerformance' => $agentPerformance,
+            ...$this->ratingDashboardData(),
         ]);
     }
 
     public function completedServices(Request $request): View
     {
-        $search = trim((string) $request->query('q', ''));
-        $agentId = $request->query('agent_id');
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'agent_id' => ['nullable', 'integer', 'exists:agents,id'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+        ]);
+        $search = trim((string) ($filters['q'] ?? ''));
+        $agentId = $filters['agent_id'] ?? null;
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
 
         $completedQuery = Reservation::query()
             ->with('agent:id,name')
@@ -91,7 +117,7 @@ class DashboardController extends Controller
             'title' => 'Rekap Layanan Selesai',
             'completedCount' => (clone $completedQuery)->count(),
             'completedReservations' => $completedReservations,
-            'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
+            'agents' => Agent::optionsSortedByName(),
             'filters' => [
                 'q' => $search,
                 'agent_id' => $agentId,
@@ -103,11 +129,18 @@ class DashboardController extends Controller
 
     public function ongoingServices(Request $request): View
     {
-        $search = trim((string) $request->query('q', ''));
-        $agentId = $request->query('agent_id');
-        $status = $request->query('status');
-        $dateFrom = $request->query('date_from');
-        $dateTo = $request->query('date_to');
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'agent_id' => ['nullable', 'integer', 'exists:agents,id'],
+            'status' => ['nullable', 'string', 'in:' . implode(',', self::ONGOING_STATUSES)],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+        ]);
+        $search = trim((string) ($filters['q'] ?? ''));
+        $agentId = $filters['agent_id'] ?? null;
+        $status = $filters['status'] ?? null;
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
 
         $ongoingQuery = Reservation::query()
             ->with('agent:id,name')
@@ -153,7 +186,7 @@ class DashboardController extends Controller
             'ongoingTotal' => (clone $ongoingQuery)->count(),
             'statusCounts' => $statusCounts,
             'ongoingReservations' => $ongoingReservations,
-            'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
+            'agents' => Agent::optionsSortedByName(),
             'filters' => [
                 'q' => $search,
                 'agent_id' => $agentId,
@@ -167,9 +200,14 @@ class DashboardController extends Controller
 
     public function agentPerformance(Request $request): View
     {
-        $search = trim((string) $request->query('q', ''));
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'only_active' => ['nullable', 'boolean'],
+            'min_completed' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+        ]);
+        $search = trim((string) ($filters['q'] ?? ''));
         $onlyActive = $request->boolean('only_active');
-        $minCompleted = (int) $request->query('min_completed', 0);
+        $minCompleted = (int) ($filters['min_completed'] ?? 0);
 
         $agentQuery = Agent::query();
 
@@ -185,25 +223,45 @@ class DashboardController extends Controller
             $agentQuery->whereHas('reservations', fn ($query) => $query->whereIn('status', self::ONGOING_STATUSES));
         }
 
+        if ($minCompleted > 0) {
+            $agentQuery->whereHas(
+                'reservations',
+                fn ($query) => $query->where('status', 'completed'),
+                '>=',
+                $minCompleted,
+            );
+        }
+
+        // Badge "Agent Aktif" dihitung dari query bersih (sebelum withCount
+        // dipasang) agar angkanya akurat — 16/16 saat tanpa filter.
+        $totalAgents = (clone $agentQuery)->count();
+        $activeAgents = (clone $agentQuery)->where('is_active', true)->count();
+
+        $averageRatingSub = Reservation::query()
+            ->selectRaw('AVG((rating_kemudahan + rating_efisiensi + rating_sikap + rating_kejelasan + rating_kepuasan) / ' . count(Reservation::RATING_QUESTIONS) . ')')
+            ->whereColumn('agents.id', 'reservations.agent_id');
+
         $agentPerformance = $agentQuery
             ->withCount([
                 'reservations as total_reservations_count',
                 'reservations as completed_reservations_count' => fn ($query) => $query->where('status', 'completed'),
                 'reservations as active_reservations_count' => fn ($query) => $query->whereIn('status', self::ONGOING_STATUSES),
+                'reservations as rated_reservations_count' => fn ($query) => $query
+                    ->whereNotNull('rating_kemudahan')
+                    ->whereNotNull('rating_efisiensi')
+                    ->whereNotNull('rating_sikap')
+                    ->whereNotNull('rating_kejelasan')
+                    ->whereNotNull('rating_kepuasan'),
             ])
-            ->having('completed_reservations_count', '>=', $minCompleted)
-            ->orderByDesc('completed_reservations_count')
-            ->orderByDesc('total_reservations_count')
-            ->paginate(15)
-            ->withQueryString();
+            ->selectSub($averageRatingSub, 'average_rating')
+            ->orderBy('id')
+            ->get();
 
         return view('roles.pimpinan.services.agent-performance', [
             'title' => 'Performa Agent',
             'agentPerformance' => $agentPerformance,
-            'totalAgents' => (clone $agentQuery)->count(),
-            'activeAgents' => (clone $agentQuery)
-                ->whereHas('reservations', fn ($query) => $query->whereIn('status', self::ONGOING_STATUSES))
-                ->count(),
+            'totalAgents' => $totalAgents,
+            'activeAgents' => $activeAgents,
             'filters' => [
                 'q' => $search,
                 'only_active' => $onlyActive,
@@ -214,6 +272,7 @@ class DashboardController extends Controller
 
     public function report(Request $request): View
     {
+        $this->validateReportFilters($request);
         $reportQuery = $this->buildReportQuery($request);
 
         $reportRows = (clone $reportQuery)
@@ -226,7 +285,7 @@ class DashboardController extends Controller
         return view('roles.pimpinan.services.report', [
             'title' => 'Laporan Layanan',
             'reportRows' => $reportRows,
-            'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
+            'agents' => Agent::optionsSortedByName(),
             'serviceTypes' => Reservation::query()
                 ->whereNotNull('jenis_layanan')
                 ->select('jenis_layanan')
@@ -248,12 +307,23 @@ class DashboardController extends Controller
             ],
         ]);
     }
-    public function printReport(Request $request)
+    public function printReport(Request $request): Response
     {
+        $this->validateReportFilters($request);
         $reportQuery = $this->buildReportQuery($request);
 
         $rows = (clone $reportQuery)
+            ->select([
+                'id',
+                'kode_reservasi',
+                'nama_lengkap',
+                'jenis_layanan',
+                'agent_id',
+                'status',
+                'tanggal_jam',
+            ])
             ->latest('tanggal_jam')
+            ->limit(self::MAX_EXPORT_ROWS)
             ->get();
 
         $data = [
@@ -268,12 +338,24 @@ class DashboardController extends Controller
                 'date_from' => $request->query('date_from'),
                 'date_to' => $request->query('date_to'),
             ],
-            'agents' => Agent::query()->orderBy('name')->get(['id', 'name']),
+            'agents' => Agent::optionsSortedByName(),
         ];
 
         return Pdf::loadView('roles.pimpinan.services.report-print', $data)
             ->setPaper('a4', 'portrait')
-            ->download('Laporan-Layanan-' . now()->format('YmdHis') . '.pdf');
+            ->stream('Laporan-Layanan-' . now()->format('YmdHis') . '.pdf');
+    }
+
+    private function validateReportFilters(Request $request): array
+    {
+        return $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'agent_id' => ['nullable', 'integer', 'exists:agents,id'],
+            'status' => ['nullable', 'string', 'in:' . implode(',', self::VALID_STATUSES)],
+            'jenis_layanan' => ['nullable', 'string', 'max:255'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+        ]);
     }
 
     private function buildReportQuery(Request $request): Builder

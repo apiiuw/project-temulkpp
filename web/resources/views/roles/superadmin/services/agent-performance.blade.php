@@ -25,15 +25,15 @@
 
             <form method="GET" action="{{ route('superadmin.performa-agent') }}" class="mt-5 grid gap-3 md:grid-cols-6">
                 <input
-                    type="text"
+                    type="search"
                     name="q"
                     value="{{ $filters['q'] ?? '' }}"
                     placeholder="Cari nama atau email agent"
-                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10" maxlength="255"
                 >
                 <input
                     type="number"
-                    min="0"
+                    min="0" step="1"
                     name="min_completed"
                     value="{{ $filters['min_completed'] ?? 0 }}"
                     placeholder="Minimal layanan selesai"
@@ -56,6 +56,8 @@
                             <th class="px-4 py-3">Selesai</th>
                             <th class="px-4 py-3">Berjalan</th>
                             <th class="px-4 py-3">Rasio Selesai</th>
+                            <th class="px-4 py-3">Rating</th>
+                            <th class="px-4 py-3">Dinilai</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,18 +69,25 @@
                                 <td class="px-4 py-3">{{ number_format($agent->completed_reservations_count) }}</td>
                                 <td class="px-4 py-3">{{ number_format($agent->active_reservations_count) }}</td>
                                 <td class="px-4 py-3">{{ $completionRate }}%</td>
+                                <td class="px-4 py-3 font-bold {{ $agent->average_rating !== null ? 'text-stone-900' : 'text-stone-400' }}">
+                                    @if ($agent->average_rating !== null)
+                                        {{ number_format((float) $agent->average_rating, 1) }}
+                                        <span class="text-amber-400">★</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 {{ $agent->rated_reservations_count > 0 ? 'text-stone-600' : 'text-stone-400' }}">
+                                    {{ number_format($agent->rated_reservations_count) }} dari {{ number_format($agent->completed_reservations_count) }}
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-8 text-center text-stone-500">Belum ada data performa agent.</td>
+                                <td colspan="7" class="px-4 py-8 text-center text-stone-500">Belum ada data performa agent.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
-
-            <div class="mt-6">
-                {{ $agentPerformance->links() }}
             </div>
         </section>
     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Users;
 
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
+use App\Models\ReservationSetting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,15 +69,15 @@ class AturUlangJadwalController extends Controller
 
         if (! in_array($newDateTime->format('H:i'), $this->getAvailableTimes(), true)) {
             return back()->withErrors([
-                'tanggal_jam' => 'Jam penjadwalan ulang hanya tersedia setiap 40 menit mulai 08:00 sampai 16:00 WIB, dengan jeda istirahat 12:00 sampai 13:00 WIB.',
+                'tanggal_jam' => 'Jam penjadwalan ulang tidak tersedia pada slot yang dipilih.',
             ])->withInput();
         }
 
         if (Reservation::where('tanggal_jam', $newDateTime->format('Y-m-d H:i:s'))
             ->where('id', '!=', $reservation->id)
-            ->count() >= 7) {
+            ->count() >= $this->maxReservationsPerSlot()) {
             return back()->withErrors([
-                'tanggal_jam' => 'Jadwal baru yang dipilih sudah penuh (maksimal 7 reservasi per slot). Silakan pilih slot lain.',
+                'tanggal_jam' => 'Jadwal baru yang dipilih sudah penuh. Silakan pilih slot lain.',
             ])->withInput();
         }
 
@@ -89,6 +90,7 @@ class AturUlangJadwalController extends Controller
                 'detail_keperluan' => $reservation->detail_keperluan,
                 'lampiran' => $reservation->lampiran,
                 'tanggal_jam' => $newDateTime->format('Y-m-d H:i:s'),
+                'tahun' => $newDateTime->year,
                 'kode_reservasi' => $this->generateReservationCode(),
             ];
 
@@ -128,7 +130,7 @@ class AturUlangJadwalController extends Controller
             ->groupBy(fn (Reservation $reservation) => Carbon::parse($reservation->tanggal_jam)->format('Y-m-d'))
             ->map(fn ($reservations) => $reservations
                 ->groupBy(fn (Reservation $reservation) => Carbon::parse($reservation->tanggal_jam)->format('H:i'))
-                ->filter(fn ($group) => $group->count() >= 7)
+                ->filter(fn ($group) => $group->count() >= $this->maxReservationsPerSlot())
                 ->keys()
                 ->all()
             );
@@ -147,27 +149,38 @@ class AturUlangJadwalController extends Controller
 
     private function isAllowedReservationDay(Carbon $dateTime): bool
     {
-        return $dateTime->dayOfWeekIso >= 1 && $dateTime->dayOfWeekIso <= 4;
+        $days = json_decode((string) (ReservationSetting::where('key', 'available_days')->value('value') ?? '[1,2,3,4]'), true);
+
+        return in_array($dateTime->dayOfWeekIso, $days, true);
     }
 
     private function getAvailableTimes(): array
     {
+        $settings = ReservationSetting::whereIn('key', [
+            'morning_start', 'morning_end', 'afternoon_start', 'afternoon_end', 'consultation_duration_minutes',
+        ])->pluck('value', 'key');
         $times = [];
-        $morningCurrent = Carbon::createFromTime(8, 0, 0);
-        $morningEnd = Carbon::createFromTime(11, 20, 0);
-        $afternoonCurrent = Carbon::createFromTime(13, 0, 0);
-        $afternoonEnd = Carbon::createFromTime(15, 40, 0);
+        $duration = (int) ($settings['consultation_duration_minutes'] ?? 40);
+        $morningCurrent = Carbon::createFromFormat('H:i', $settings['morning_start'] ?? '08:00');
+        $morningEnd = Carbon::createFromFormat('H:i', $settings['morning_end'] ?? '11:20');
+        $afternoonCurrent = Carbon::createFromFormat('H:i', $settings['afternoon_start'] ?? '13:00');
+        $afternoonEnd = Carbon::createFromFormat('H:i', $settings['afternoon_end'] ?? '15:40');
 
         while ($morningCurrent->lte($morningEnd)) {
             $times[] = $morningCurrent->format('H:i');
-            $morningCurrent->addMinutes(40);
+            $morningCurrent->addMinutes($duration);
         }
 
         while ($afternoonCurrent->lte($afternoonEnd)) {
             $times[] = $afternoonCurrent->format('H:i');
-            $afternoonCurrent->addMinutes(40);
+            $afternoonCurrent->addMinutes($duration);
         }
 
         return $times;
+    }
+
+    private function maxReservationsPerSlot(): int
+    {
+        return (int) (ReservationSetting::where('key', 'max_reservations_per_slot')->value('value') ?? 7);
     }
 }

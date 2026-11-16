@@ -10,12 +10,11 @@ class EnsureAgentUser
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        $user = $request->user('agent');
 
-        if (! $user || ! preg_match('/^agent\.[1-7]@temulkpp\.com$/', strtolower($user->email))) {
-            auth()->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        if (! $user || ! $user->is_active) {
+            // Hapus sesi agent saja — sesi aktor lain di browser ini tetap utuh.
+            auth('agent')->logout();
 
             return redirect()->route('login')->withErrors([
                 'email' => 'Akun ini tidak memiliki akses ke halaman agent.',

@@ -19,7 +19,7 @@
                         name="nomor_tiket"
                         value="{{ $nomorTiket }}"
                         placeholder="Contoh: RES-20260426-ABCD"
-                        class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-stone-900 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                        class="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-stone-900 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-500/10" maxlength="17" pattern="RES-[0-9]{8}-[A-Za-z0-9]{4}" title="Gunakan format RES-YYYYMMDD-XXXX."
                     >
                     <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-red-700 to-black px-6 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(127,29,29,0.22)] transition hover:-translate-y-0.5">
                         Konfirmasi Tiket
@@ -63,7 +63,7 @@
                     </div>
                     <div class="rounded-2xl border border-stone-200 bg-white px-4 py-4">
                         <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">Status</p>
-                        <p class="mt-1 text-sm font-bold text-stone-900">{{ str_replace('_', ' ', $reservation->status) }}</p>
+                        <p class="mt-1 text-sm font-bold text-stone-900">{{ $reservation->status_label }}</p>
                     </div>
                     <div class="rounded-2xl border border-stone-200 bg-white px-4 py-4 sm:col-span-2">
                         <p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">Detail Keperluan</p>
@@ -76,3 +76,4 @@
 </div>
 
 @endsection
+

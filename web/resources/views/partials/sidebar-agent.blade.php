@@ -1,4 +1,5 @@
-<aside class="sidebar-transition hidden w-96 shrink-0 border-r border-stone-200/80 bg-[linear-gradient(180deg,#201516_0%,#2f1e20_100%)] text-white lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
+<aside id="app-sidebar" class="app-sidebar-drawer sidebar-transition relative hidden w-96 shrink-0 flex-col border-r border-stone-200/80 bg-[linear-gradient(180deg,#2b1b12_0%,#4a2b17_100%)] text-white lg:flex lg:h-screen lg:overflow-y-auto">
+    <button type="button" class="app-sidebar-close" data-mobile-sidebar-close aria-label="Tutup navigasi" onclick="document.body.classList.remove('mobile-sidebar-open');">×</button>
     <div class="border-b border-white/10 p-4">
         <div class="flex items-center gap-4">
             <div class="sidebar-transition flex items-center justify-center rounded-2xl bg-white px-3 py-3 shadow-sm shrink-0">
@@ -18,8 +19,8 @@
         <div class="space-y-8">
             <div class="sidebar-hide-content sidebar-transition rounded-[28px] border border-white/10 bg-white/6 p-5 overflow-hidden">
                 <p class="text-xs font-bold uppercase tracking-[0.24em] text-red-200 whitespace-nowrap">Akun Aktif</p>
-                <p class="mt-3 text-lg font-bold truncate">{{ auth()->user()->name }}</p>
-                <p class="mt-1 text-sm text-white/70 truncate">{{ auth()->user()->email }}</p>
+                <p class="mt-3 text-lg font-bold truncate">{{ auth()->guard('agent')->user()->name }}</p>
+                <p class="mt-1 text-sm text-white/70 truncate">{{ auth()->guard('agent')->user()->email }}</p>
             </div>
 
             @php
@@ -69,8 +70,19 @@
             </nav>
         </div>
 
-        <form method="POST" action="{{ route('logout') }}" class="mt-auto pt-6">
+        <div class="mt-auto border-t border-white/10 pt-6">
+            <a
+                href="{{ route('login') }}"
+                title="Masuk sebagai aktor lain di browser yang sama"
+                class="sidebar-center-content sidebar-transition flex w-full items-center justify-center rounded-2xl border border-dashed border-white/14 px-4 py-2.5 text-sm font-bold text-white/70 transition-all duration-300 hover:border-white/30 hover:text-white"
+            >
+                <span class="sidebar-hide-content sidebar-transition whitespace-nowrap">+ Masuk akun lain</span>
+            </a>
+        </div>
+
+        <form method="POST" action="{{ route('logout') }}" class="mt-4">
             @csrf
+            <input type="hidden" name="guard" value="agent">
             <button type="submit" class="sidebar-center-content sidebar-transition flex w-full items-center justify-center rounded-2xl border border-white/14 bg-white/8 px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-white/14">
                 <span class="sidebar-hide-content sidebar-transition mr-2">Logout</span>
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>

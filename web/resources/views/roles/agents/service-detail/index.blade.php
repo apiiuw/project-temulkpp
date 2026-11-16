@@ -17,18 +17,18 @@
                     <p class="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">Filter Data</p>
                     <h2 class="mt-2 text-xl font-black text-stone-900">Cari hasil layanan</h2>
                 </div>
-                <a href="{{ route('agent.detail-layanan') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Reset</a>
+                <a href="{{ route('agent.detail-layanan') }}" class="inline-flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-bold text-stone-700 hover:bg-stone-50">Atur Ulang</a>
             </div>
 
             <form method="GET" action="{{ route('agent.detail-layanan') }}" class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <label class="block xl:col-span-2">
-                    <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Search</span>
+                    <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Pencarian</span>
                     <input
                         type="search"
                         name="q"
                         value="{{ $filters['q'] ?? '' }}"
                         placeholder="Kode, nama, instansi, jabatan, layanan"
-                        class="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-red-400"
+                        class="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-red-400" maxlength="255"
                     >
                 </label>
 
@@ -36,7 +36,7 @@
                     <span class="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-stone-400">Status</span>
                     <select name="status" class="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-red-400">
                         <option value="">Semua Status</option>
-                        @foreach (['pending' => 'Pending', 'checked_in_front_desk' => 'Sudah Check-In', 'in_progress' => 'Sedang Berlangsung', 'completed' => 'Selesai', 'expired_front_desk' => 'Kadaluarsa'] as $value => $label)
+                    @foreach (['pending' => 'Menunggu', 'checked_in_front_desk' => 'Sudah Check-In', 'in_progress' => 'Sedang Berlangsung', 'completed' => 'Selesai', 'expired_front_desk' => 'Kedaluwarsa', 'dialihkan_ke_l2' => 'Dialihkan ke L2'] as $value => $label)
                             <option value="{{ $value }}" {{ ($filters['status'] ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>

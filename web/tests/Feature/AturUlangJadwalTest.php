@@ -60,6 +60,8 @@ test('reservation cannot be rescheduled to a full slot when 7 reservations alrea
 });
 
 test('reservation can be rescheduled and gets a new code', function () {
+    Carbon::setTestNow('2026-04-13 07:00:00');
+
     $reservation = Reservation::create([
         'nama_lengkap' => 'Rafi Rizqallah Andila',
         'jabatan' => 'Staf Pengadaan',
@@ -82,6 +84,8 @@ test('reservation can be rescheduled and gets a new code', function () {
         'nama_lengkap' => 'Rafi Rizqallah Andila',
         'tanggal_jam' => '2026-04-14 08:40:00',
     ]);
+
+    Carbon::setTestNow();
 });
 
 test('reservation can be cancelled from reschedule page', function () {

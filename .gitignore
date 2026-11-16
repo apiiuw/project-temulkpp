@@ -3,9 +3,27 @@
 # Laravel
 web/node_modules/
 web/vendor/
+web/storage/framework/cache/*
+web/storage/framework/sessions/*
+web/storage/framework/views/*
+web/storage/logs/*
+web/bootstrap/cache/*.php
 
 # Superset
 apache/venv/
+apache/__pycache__/
+apache/superset-data/*
+!apache/superset-data/superset.db
+apache/.provisioned.json
+superset.db
+apache/.env.docker
+web/.env.docker
+
+# Local data and database dumps
+temulkpp.sql
+data/
+olah_data/
+web/index_dump.txt
 
 # System
 .DS_Store

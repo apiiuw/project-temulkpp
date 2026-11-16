@@ -15,11 +15,18 @@ class ScheduleController extends Controller
         $agentId = Auth::guard('agent')->id();
         $today = Carbon::today();
 
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:pending,checked_in_front_desk,in_progress,completed,expired_front_desk,dialihkan_ke_l2'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+        ]);
+
         $filters = [
-            'q' => trim((string) $request->query('q', '')),
-            'status' => trim((string) $request->query('status', '')),
-            'date_from' => trim((string) $request->query('date_from', '')),
-            'date_to' => trim((string) $request->query('date_to', '')),
+            'q' => trim((string) ($validated['q'] ?? '')),
+            'status' => $validated['status'] ?? '',
+            'date_from' => $validated['date_from'] ?? '',
+            'date_to' => $validated['date_to'] ?? '',
         ];
 
         $baseQuery = Reservation::query()
@@ -49,19 +56,16 @@ class ScheduleController extends Controller
             $baseQuery->whereDate('tanggal_jam', '<=', $filters['date_to']);
         }
 
-        $filteredReservations = (clone $baseQuery)
+        $todayReservations = (clone $baseQuery)
+            ->whereDate('tanggal_jam', $today)
             ->orderBy('tanggal_jam')
             ->get();
 
-        $todayReservations = $filteredReservations
-            ->filter(fn (Reservation $reservation) => Carbon::parse($reservation->tanggal_jam)->isSameDay($today))
-            ->values();
-
-        $upcomingReservations = $filteredReservations
-            ->filter(fn (Reservation $reservation) => Carbon::parse($reservation->tanggal_jam)->greaterThanOrEqualTo($today->copy()->startOfDay()))
-            ->sortBy('tanggal_jam')
-            ->values()
-            ->take(20);
+        $upcomingReservations = (clone $baseQuery)
+            ->where('tanggal_jam', '>=', Carbon::now())
+            ->orderBy('tanggal_jam')
+            ->paginate(20)
+            ->withQueryString();
 
         return view('roles.agents.schedule.index', [
             'title' => 'Jadwal Layanan Agent',

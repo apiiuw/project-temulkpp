@@ -113,7 +113,7 @@
                                     name="kode_reservasi"
                                     value="{{ old('kode_reservasi', $searchedCode) }}"
                                     placeholder="Contoh: RES-20260407-ABCD"
-                                    class="w-full px-4 py-3 uppercase tracking-[0.18em] bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all outline-none text-center"
+                                    class="w-full px-4 py-3 uppercase tracking-[0.18em] bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all outline-none text-center" maxlength="17" pattern="RES-[0-9]{8}-[A-Za-z0-9]{4}" title="Gunakan format RES-YYYYMMDD-XXXX."
                                 >
                                 <p class="mt-2 text-xs text-gray-500">Masukkan kode reservasi yang tercantum pada QR code atau file PDF reservasi Anda.</p>
                             </div>
@@ -217,6 +217,7 @@
                                         value="{{ $currentDate }}"
                                         required
                                         autocomplete="off"
+                                        readonly
                                         placeholder="Pilih tanggal baru"
                                         title="Hanya tersedia hari Senin sampai Kamis."
                                         class="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all outline-none"
@@ -232,7 +233,7 @@
                                         id="jam_reschedule"
                                         role="radiogroup"
                                         aria-label="Pilihan jam reservasi baru"
-                                        title="Interval jadwal tersedia setiap 40 menit dari 08:00 sampai 16:00 WIB, kecuali saat istirahat 12:00 sampai 13:00 WIB."
+                                         title="Pilih slot jadwal yang tersedia."
                                         class="grid grid-cols-2 gap-3 rounded-2xl border border-gray-200 bg-white p-3 md:grid-cols-3"
                                     >
                                         <div
@@ -243,7 +244,7 @@
                                         </div>
                                     </div>
                                     <p id="reschedule-slot-tooltip" class="mt-2 text-xs text-gray-500">
-                                        Slot penuh akan otomatis dinonaktifkan. Jam 12:00 sampai 13:00 adalah waktu istirahat.
+                                         Slot penuh akan otomatis dinonaktifkan sesuai pengaturan reservasi.
                                     </p>
                                     <input type="hidden" id="tanggal_jam_baru" name="tanggal_jam" value="{{ old('tanggal_jam', \Carbon\Carbon::parse($reservation->tanggal_jam)->format('Y-m-d H:i:s')) }}">
                                 </div>
@@ -324,7 +325,7 @@
         let selectedTime = @json($currentTime ?? '');
         const todayString = nowString.slice(0, 10);
         const currentTimeString = nowString.slice(11, 16);
-        const lastReservableTime = '15:40';
+         const lastReservableTime = availableTimes.length ? availableTimes[availableTimes.length - 1] : '23:59';
         const isTodayClosed = currentTimeString >= lastReservableTime;
         const formatLocalDate = (date) => {
             const year = date.getFullYear();

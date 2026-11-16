@@ -40,11 +40,11 @@
 
             <form method="GET" action="{{ route('superadmin.laporan') }}" class="mt-5 grid gap-3 md:grid-cols-8">
                 <input
-                    type="text"
+                    type="search"
                     name="q"
                     value="{{ $filters['q'] ?? '' }}"
                     placeholder="Cari kode, tamu, layanan, agent"
-                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10" maxlength="255"
                 >
 
                 <select name="agent_id" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
@@ -56,8 +56,8 @@
 
                 <select name="status" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                     <option value="">Semua Status</option>
-                    @foreach (['pending','checked_in_front_desk','in_progress','completed','expired_front_desk'] as $status)
-                        <option value="{{ $status }}" {{ ($filters['status'] ?? '') === $status ? 'selected' : '' }}>{{ str_replace('_', ' ', $status) }}</option>
+                    @foreach (['pending' => 'Menunggu', 'checked_in_front_desk' => 'Sudah Check-In', 'in_progress' => 'Sedang Berlangsung', 'completed' => 'Selesai', 'expired_front_desk' => 'Kedaluwarsa', 'dialihkan_ke_l2' => 'Dialihkan ke L2'] as $status => $label)
+                        <option value="{{ $status }}" {{ ($filters['status'] ?? '') === $status ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
 
@@ -105,7 +105,7 @@
                                 <td class="px-4 py-3">{{ $row->jenis_layanan }}</td>
                                 <td class="px-4 py-3">{{ optional($row->agent)->name ?? '-' }}</td>
                                 <td class="px-4 py-3">
-                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-700">{{ str_replace('_', ' ', $row->status) }}</span>
+                                    <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold uppercase text-stone-700">{{ $row->status }}</span>
                                 </td>
                             </tr>
                         @empty
@@ -125,3 +125,4 @@
 </div>
 
 @endsection
+

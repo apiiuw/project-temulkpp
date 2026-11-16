@@ -1,13 +1,16 @@
 @extends('layouts.agent')
 @section('container')
 
+{{-- Mode data uji (?data=uji): menyaring seluruh isi dashboard hanya ke data uji (source = 'data-uji') --}}
+@php($onlyTestData = request()->query('data') === 'uji')
+
 <div class="px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
     <div class="mx-auto max-w-7xl">
         <div class="rounded-4xl border border-stone-200/80 bg-white/90 p-6 shadow-[0_24px_60px_rgba(120,53,15,0.10)] backdrop-blur-xl sm:p-8">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div class="max-w-3xl">
                     <p class="text-xs font-bold uppercase tracking-[0.3em] text-red-700">Dashboard Agent</p>
-                    <h1 class="mt-3 text-3xl font-black text-stone-900 sm:text-4xl">Selamat datang, {{ auth()->user()->name }}</h1>
+                    <h1 class="mt-3 text-3xl font-black text-stone-900 sm:text-4xl">Selamat datang, {{ auth('agent')->user()->name }}</h1>
                     <p class="mt-4 text-sm leading-relaxed text-stone-600">
                         Ini adalah pusat kerja harian agent. Urutannya: cek tugas, buka jadwal, mulai tatap muka, lalu selesaikan layanan dan isi catatan hasil pelayanan.
                     </p>
@@ -15,7 +18,7 @@
 
                 <div class="rounded-[28px] border border-red-100 bg-[linear-gradient(145deg,#fff7ed_0%,#ffffff_100%)] p-5 shadow-sm lg:max-w-sm">
                     <p class="text-xs font-bold uppercase tracking-[0.24em] text-red-700">Informasi Akun</p>
-                    <p class="mt-3 text-lg font-bold text-stone-900">{{ auth()->user()->email }}</p>
+                    <p class="mt-3 text-lg font-bold text-stone-900">{{ auth('agent')->user()->email }}</p>
                     <p class="mt-2 text-sm leading-relaxed text-stone-600">
                         Akun ini aktif sebagai agent internal TemuLKPP dan hanya dapat mengakses fitur operasional agent.
                     </p>
@@ -24,6 +27,28 @@
         </div>
 
         <div class="mt-6 grid gap-6">
+            <section class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-red-600">Tahapan Kerja Agent</p>
+                <div class="mt-5 grid gap-4 lg:grid-cols-4">
+                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+                        <p class="text-sm font-black text-stone-900">1. Cek tugas</p>
+                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Lihat jadwal hari ini dan reservasi yang sudah check-in.</p>
+                    </div>
+                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+                        <p class="text-sm font-black text-stone-900">2. Mulai tatap muka</p>
+                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Tekan tombol mulai saat tamu siap dilayani.</p>
+                    </div>
+                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+                        <p class="text-sm font-black text-stone-900">3. Isi catatan layanan</p>
+                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Tuliskan hasil pelayanan dan unggah file bila diperlukan.</p>
+                    </div>
+                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
+                        <p class="text-sm font-black text-stone-900">4. Selesaikan layanan</p>
+                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Pastikan status berubah menjadi selesai setelah layanan ditutup.</p>
+                    </div>
+                </div>
+            </section>
+
             <section class="rounded-[28px] border border-red-200/80 bg-[linear-gradient(135deg,#fff4f2_0%,#ffffff_100%)] p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
                 <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div>
@@ -51,28 +76,6 @@
                     <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Selesai Hari Ini</p>
                         <p class="mt-3 text-3xl font-black text-emerald-800">{{ number_format($taskSummary['completedToday'] ?? 0) }}</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
-                <p class="text-xs font-bold uppercase tracking-[0.22em] text-red-600">Tahapan Kerja Agent</p>
-                <div class="mt-5 grid gap-4 lg:grid-cols-4">
-                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
-                        <p class="text-sm font-black text-stone-900">1. Cek tugas</p>
-                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Lihat jadwal hari ini dan reservasi yang sudah check-in.</p>
-                    </div>
-                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
-                        <p class="text-sm font-black text-stone-900">2. Mulai tatap muka</p>
-                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Tekan tombol mulai saat tamu siap dilayani.</p>
-                    </div>
-                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
-                        <p class="text-sm font-black text-stone-900">3. Isi catatan layanan</p>
-                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Tuliskan hasil pelayanan dan unggah file bila diperlukan.</p>
-                    </div>
-                    <div class="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4">
-                        <p class="text-sm font-black text-stone-900">4. Selesaikan layanan</p>
-                        <p class="mt-2 text-sm leading-relaxed text-stone-600">Pastikan status berubah menjadi selesai setelah layanan ditutup.</p>
                     </div>
                 </div>
             </section>
@@ -164,6 +167,26 @@
         </div>
     </div>
 
+    {{-- Kontrol Jenis Data: menyaring grafik Analisis Performa & Penilaian Tamu --}}
+    <div class="mx-auto mt-6 max-w-7xl">
+        <div class="flex flex-wrap items-center gap-3 rounded-[28px] border border-stone-200/80 bg-white p-4 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
+            <label for="jenis-data-select" class="text-xs font-bold uppercase tracking-[0.22em] text-red-600">Jenis Data</label>
+            <select id="jenis-data-select" class="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-900 focus:border-red-600 focus:ring-red-600">
+                <option value="historis" @selected(!$onlyTestData)>Historis</option>
+                <option value="uji" @selected($onlyTestData)>Data Uji</option>
+            </select>
+            <span class="text-xs leading-relaxed text-stone-500">Menyaring grafik Analisis Performa dan isi Penilaian Tamu — data historis belum dinilai, jadi kartunya tampil kosong.</span>
+        </div>
+    </div>
+    <script>
+        document.getElementById('jenis-data-select').addEventListener('change', function () {
+            const url = new URL(window.location.href);
+            if (this.value === 'uji') { url.searchParams.set('data', 'uji'); }
+            else { url.searchParams.delete('data'); }
+            window.location.href = url.toString();
+        });
+    </script>
+
     {{-- Superset Analysis Section --}}
     <div class="mx-auto mt-6 max-w-7xl">
         <div class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
@@ -189,10 +212,16 @@
             </div>
         </div>
     </div>
+
+    {{-- Section penilaian tamu selalu tampil, baik mode Data Uji maupun Historis.
+         Data historis belum memiliki rating/komentar, jadi kartu tampil dengan empty state. --}}
+    <div class="mx-auto mt-6 max-w-7xl">
+        @include('partials.rating-dashboard')
+    </div>
 </div>
 
 @push('scripts')
-<script src="https://unpkg.com/@superset-ui/embedded-sdk"></script>
+<script src="https://unpkg.com/@superset-ui/embedded-sdk@0.2.0"></script>
 <style>
     /* Force Superset iframe to fill container */
     #superset-container iframe {
@@ -207,8 +236,9 @@
         const container = document.getElementById('superset-container');
         const loader = document.getElementById('superset-loader');
         
-        const DASHBOARD_ID = '{{ env("SUPERSET_DASHBOARD_ID") }}';
-        const SUPERSET_DOMAIN = '{{ env("SUPERSET_URL", "http://localhost:8088") }}';
+        const DASHBOARD_ID = @json(config('superset.dashboards.agent'));
+        const SUPERSET_DOMAIN = @json(config('superset.public_url'));
+        const dataParam = @json($onlyTestData ? '&data=uji' : '');
 
         if (!DASHBOARD_ID || DASHBOARD_ID === 'your-dashboard-uuid-here') {
             loader.innerHTML = `
@@ -226,7 +256,7 @@
                 supersetDomain: SUPERSET_DOMAIN,
                 mountPoint: container,
                 fetchGuestToken: async () => {
-                    const response = await fetch(`{{ route('superset.guest-token') }}?dashboardId=${DASHBOARD_ID}`);
+                    const response = await fetch(`{{ route('superset.guest-token') }}?dashboardId=${DASHBOARD_ID}${dataParam}`);
                     if (!response.ok) {
                         const errData = await response.json();
                         throw new Error(errData.error || 'Gagal mengambil token');

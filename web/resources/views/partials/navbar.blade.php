@@ -38,6 +38,15 @@
               Atur Ulang Jadwal
             </a>
           </li>
+          <li>
+            <a
+              href="{{ route('penilaian') }}"
+              class="block rounded-full px-5 py-3 text-sm font-semibold transition-all duration-300 md:px-6 @if(request()->routeIs('penilaian*')) bg-linear-to-r from-red-700 to-red-600 text-white shadow-[0_10px_20px_rgba(185,28,28,0.28)] @else text-gray-800 hover:bg-red-50 hover:text-red-700 @endif"
+              aria-current="{{ request()->routeIs('penilaian*') ? 'page' : 'false' }}"
+            >
+              Penilaian
+            </a>
+          </li>
         </ul>
       </div>
     </div>

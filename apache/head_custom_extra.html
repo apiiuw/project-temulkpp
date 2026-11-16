@@ -1,0 +1,43 @@
+{#
+  Custom <head> extras for the TemuLKPP Superset deployment.
+
+  Included by superset/templates/spa.html on every dashboard / chart page.
+  Managed via a docker-compose volume mount (see apache/docker-compose.yml):
+  this host file is bind-mounted over /app/superset/templates/head_custom_extra.html
+  in the container, so it survives restarts and container recreations.
+#}
+<style>
+  /* temulkpp: keep the native-filter "Apply filters" / "Clear all" buttons
+     right under the filters instead of pinned to the bottom of the full-height
+     filter panel. The vertical filter bar forces its filters scroll area to
+     calc(100vh - offset); with a single filter that leaves a large empty gap
+     between the filter and the buttons. Shrink that area to its content so the
+     buttons flow up directly beneath the last filter.
+
+     - div:has(+ [data-test="filterbar-action-buttons"]) targets the filters
+       scroll container (the element immediately before the action buttons).
+     - The buttons container is un-stuck (position: static) so it stays right
+       below the filters. */
+  div:has(+ [data-test="filterbar-action-buttons"]) {
+    height: auto !important;
+    flex: 0 0 auto !important;
+  }
+  [data-test="filterbar-action-buttons"] {
+    position: static !important;
+    background: none !important;
+  }
+
+  /* temulkpp: make the Big Number / KPI stat-card value bold (Rata-rata
+     Durasi, Durasi Tercepat/Terlama, Total Reservasi).
+
+     - Scoped by [data-test-viz-type="big_number_total"] so ONLY Big Number
+       Total charts are affected; pie / table / timeseries charts are untouched.
+     - The number is rendered by a hashed styled-component that sets its own
+       font-weight, so `*` + !important is used to reliably override it. This
+       also bolds the small metric-name / subheader labels inside the same
+       card, which keeps the stat card visually consistent. */
+  [data-test-viz-type="big_number_total"],
+  [data-test-viz-type="big_number_total"] * {
+    font-weight: 700 !important;
+  }
+</style>

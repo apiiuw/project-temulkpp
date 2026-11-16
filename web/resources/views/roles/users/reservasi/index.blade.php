@@ -146,6 +146,7 @@
                                         value="{{ $oldReservationDate }}"
                                         required
                                         autocomplete="off"
+                                        readonly
                                         placeholder="Pilih tanggal reservasi"
                                         title="Pilih hari Senin sampai Kamis. Slot yang penuh akan otomatis dinonaktifkan pada pilihan jam."
                                         class="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all outline-none"

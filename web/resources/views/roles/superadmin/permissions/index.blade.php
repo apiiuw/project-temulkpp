@@ -50,8 +50,10 @@
                                             @foreach ($categoryMenus as $menu)
                                                 <label class="group flex cursor-pointer items-center justify-between rounded-2xl border border-stone-100 bg-stone-50/50 p-4 transition-all hover:border-amber-200 hover:bg-amber-50/30">
                                                     <div class="flex items-center gap-3">
-                                                        <div class="text-stone-400 transition-colors group-hover:text-amber-600">
-                                                            {!! $menu->icon !!}
+                                                        <div class="text-stone-400 transition-colors group-hover:text-amber-600" aria-hidden="true">
+                                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.75a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5Zm0 0V4.5m0 14.25v-2.25m5.25-5.25h2.25m-14.25 0H3m13.02-3.72 1.59-1.59M6.39 17.61l1.59-1.59m8.04 0 1.59 1.59M6.39 6.39l1.59 1.59" />
+                                                            </svg>
                                                         </div>
                                                         <span class="text-sm font-bold text-stone-700 transition-colors group-hover:text-stone-900">{{ $menu->name }}</span>
                                                     </div>

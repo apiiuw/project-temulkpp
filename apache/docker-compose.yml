@@ -1,0 +1,34 @@
+services:
+  superset:
+    build:
+      context: ..
+      dockerfile: apache/Dockerfile
+    image: temulkpp-superset:6.1.0
+    container_name: temulkpp-superset
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:8088"
+    env_file:
+      - ./.env.docker
+    environment:
+      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+      SUPERSET_HOME: /app/superset_home
+      HOME: /app/superset_home
+    volumes:
+      - ./superset_config.py:/app/pythonpath/superset_config.py:ro
+      - ./fix_windows.py:/app/fix_windows.py:ro
+      - ./sync_mysql_connection.py:/app/sync_mysql_connection.py:ro
+      - ./add_pimpinan_charts.py:/app/add_pimpinan_charts.py:ro
+      - ./add_triwulan_filter.py:/app/add_triwulan_filter.py:ro
+      - ./head_custom_extra.html:/app/superset/templates/head_custom_extra.html:ro
+      - ./superset-data:/app/superset_home
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 1024m
+    cpus: 1.5
+    command: >-
+      sh -c "superset db upgrade && python /app/sync_mysql_connection.py &&
+      superset init && python /app/add_pimpinan_charts.py &&
+      python /app/add_triwulan_filter.py &&
+      gunicorn --bind 0.0.0.0:8088 --workers 1 --threads 4
+      --timeout 120 'superset.app:create_app()'"

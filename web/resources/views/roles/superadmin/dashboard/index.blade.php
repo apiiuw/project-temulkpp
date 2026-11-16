@@ -1,5 +1,8 @@
-@extends('layouts.superadmin')
+﻿@extends('layouts.superadmin')
 @section('container')
+
+{{-- Mode data uji (?data=uji): menyaring seluruh isi dashboard hanya ke data uji (source = 'data-uji') --}}
+@php($onlyTestData = request()->query('data') === 'uji')
 
 <div class="px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
     <div class="mx-auto max-w-7xl">
@@ -23,6 +26,24 @@
             </div>
         </div>
 
+        {{-- Kontrol Jenis Data: satu kendali untuk kartu, tabel, section penilaian, dan grafik Superset --}}
+        <div class="mt-6 flex flex-wrap items-center gap-3 rounded-[28px] border border-stone-200/80 bg-white p-4 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
+            <label for="jenis-data-select" class="text-xs font-bold uppercase tracking-[0.22em] text-red-600">Jenis Data</label>
+            <select id="jenis-data-select" class="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-bold text-stone-900 focus:border-red-600 focus:ring-red-600">
+                <option value="historis" @selected(!$onlyTestData)>Historis</option>
+                <option value="uji" @selected($onlyTestData)>Data Uji</option>
+            </select>
+            <span class="text-xs leading-relaxed text-stone-500">Menyaring seluruh isi dashboard — kartu, ringkasan operasional, penilaian tamu, dan performa agent.</span>
+        </div>
+        <script>
+            document.getElementById('jenis-data-select').addEventListener('change', function () {
+                const url = new URL(window.location.href);
+                if (this.value === 'uji') { url.searchParams.set('data', 'uji'); }
+                else { url.searchParams.delete('data'); }
+                window.location.href = url.toString();
+            });
+        </script>
+
         <div id="overview" class="mt-6 grid gap-5 md:grid-cols-2">
             <div class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
                 <p class="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">Layanan Selesai</p>
@@ -35,9 +56,8 @@
                 <h2 class="mt-3 text-3xl font-black text-stone-900">{{ number_format($unfinishedCount) }}</h2>
                 <p class="mt-3 text-sm leading-relaxed text-stone-600">Reservasi yang masih pending, check-in, atau sedang diproses.</p>
             </div>
-
         </div>
-        
+
         {{-- Superset Analysis Section --}}
         <div class="mt-6">
             <div class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
@@ -64,6 +84,10 @@
             </div>
         </div>
 
+        {{-- Section penilaian tamu selalu tampil, baik mode Data Uji maupun Historis.
+             Data historis belum memiliki rating/komentar, jadi kartu tampil dengan empty state. --}}
+        @include('partials.rating-dashboard')
+
         <div class="mt-6 grid gap-6 xl:grid-cols-2">
             <section id="layanan-selesai" class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
             <p class="text-xs font-bold uppercase tracking-[0.22em] text-red-600">Ringkasan Operasional</p>
@@ -71,7 +95,7 @@
                 <p class="mt-2 text-sm text-stone-600">Ringkasan layanan yang sudah selesai secara keseluruhan.</p>
 
                 <div class="mt-6 overflow-hidden rounded-2xl border border-stone-200">
-                    <table class="w-full text-left text-sm text-stone-600">
+                    <table class="responsive-data-table w-full text-left text-sm text-stone-600">
                         <thead class="bg-stone-50 text-xs font-bold uppercase text-stone-700">
                             <tr>
                                 <th class="px-4 py-3">Waktu Selesai</th>
@@ -102,7 +126,7 @@
                 <p class="mt-2 text-sm text-stone-600">Data reservasi yang masih berjalan dan perlu perhatian operasional.</p>
 
                 <div class="mt-6 overflow-hidden rounded-2xl border border-stone-200">
-                    <table class="w-full text-left text-sm text-stone-600">
+                    <table class="responsive-data-table w-full text-left text-sm text-stone-600">
                         <thead class="bg-stone-50 text-xs font-bold uppercase text-stone-700">
                             <tr>
                                 <th class="px-4 py-3">Waktu</th>
@@ -116,7 +140,7 @@
                                     <td class="px-4 py-3 whitespace-nowrap">{{ optional($reservation->tanggal_jam)->format('d M Y, H:i') ?? '-' }}</td>
                                     <td class="px-4 py-3 font-bold text-stone-900">{{ $reservation->kode_reservasi }}</td>
                                     <td class="px-4 py-3">
-                                        <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{{ str_replace('_', ' ', $reservation->status) }}</span>
+                                        <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{{ $reservation->status_label }}</span>
                                     </td>
                                 </tr>
                             @empty
@@ -136,7 +160,7 @@
                 <p class="mt-2 text-sm text-stone-600">Perbandingan singkat performa agent berdasarkan layanan yang ditangani.</p>
 
                 <div class="mt-6 overflow-hidden rounded-2xl border border-stone-200">
-                    <table class="w-full text-left text-sm text-stone-600">
+                    <table class="responsive-data-table w-full text-left text-sm text-stone-600">
                         <thead class="bg-stone-50 text-xs font-bold uppercase text-stone-700">
                             <tr>
                                 <th class="px-4 py-3">Agent</th>
@@ -163,11 +187,12 @@
                 </div>
             </section>
         </div>
+
     </div>
 </div>
 
 @push('scripts')
-<script src="https://unpkg.com/@superset-ui/embedded-sdk"></script>
+<script src="https://unpkg.com/@superset-ui/embedded-sdk@0.2.0"></script>
 <style>
     /* Force Superset iframe to fill container */
     #superset-container iframe {
@@ -182,9 +207,8 @@
         const container = document.getElementById('superset-container');
         const loader = document.getElementById('superset-loader');
         
-        // Use the newly generated Superadmin Dashboard UUID directly
-        const DASHBOARD_ID = 'da1f9b3b-8911-4eb7-a7eb-9df03b41bb1c';
-        const SUPERSET_DOMAIN = '{{ env("SUPERSET_URL", "http://localhost:8088") }}';
+        const DASHBOARD_ID = @json(config('superset.dashboards.superadmin'));
+        const SUPERSET_DOMAIN = @json(config('superset.public_url'));
 
         try {
             await supersetEmbeddedSdk.embedDashboard({
@@ -192,7 +216,7 @@
                 supersetDomain: SUPERSET_DOMAIN,
                 mountPoint: container,
                 fetchGuestToken: async () => {
-                    const response = await fetch(`{{ route('superset.guest-token') }}?dashboardId=${DASHBOARD_ID}`);
+                    const response = await fetch(`{{ route('superset.guest-token') }}?dashboardId=${DASHBOARD_ID}&data={{ request()->query('data') === 'uji' ? 'uji' : 'historis' }}`);
                     if (!response.ok) {
                         const errData = await response.json();
                         throw new Error(errData.error || 'Gagal mengambil token');
@@ -223,3 +247,4 @@
 @endpush
 
 @endsection
+

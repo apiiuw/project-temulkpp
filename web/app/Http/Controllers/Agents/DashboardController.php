@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Agents;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\BuildsRatingDashboard;
 use App\Models\Reservation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -10,12 +11,15 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    use BuildsRatingDashboard;
+
     public function index(): View
     {
         $today = Carbon::today()->toDateString();
         $agentId = Auth::guard('agent')->id();
 
         $pendingReservations = Reservation::whereDate('tanggal_jam', $today)
+            ->where('agent_id', $agentId)
             ->where('status', 'pending')
             ->orderBy('tanggal_jam', 'asc')
             ->get();
@@ -68,6 +72,9 @@ class DashboardController extends Controller
             'readyReservations' => $readyReservations,
             'ongoingReservations' => $ongoingReservations,
             'taskSummary' => $taskSummary,
+            // Penilaian tamu hanya untuk agent yang sedang login.
+            ...$this->ratingDashboardData($agentId !== null ? (int) $agentId : null),
+            'showAgentName' => false,
         ]);
     }
 }

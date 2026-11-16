@@ -38,7 +38,7 @@
                                     <div class="grid grid-cols-2 gap-2">
                                         @php
                                             $days = [1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 0 => 'Minggu'];
-                                            $availableDays = json_decode($settings['available_days'] ?? '[]', true);
+                                            $availableDays = (array) json_decode($settings['available_days'] ?? '[]', true);
                                         @endphp
                                         @foreach($days as $val => $label)
                                             <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-stone-100 bg-stone-50 px-4 py-3 transition-all hover:border-red-200 hover:bg-red-50/30 has-[:checked]:border-red-600 has-[:checked]:bg-red-50">
@@ -52,7 +52,7 @@
                                     <div class="space-y-2">
                                         <label class="text-xs font-bold uppercase tracking-wider text-stone-400">Maks. Reservasi / Slot</label>
                                         <div class="relative">
-                                            <input type="number" name="max_reservations_per_slot" value="{{ $settings['max_reservations_per_slot'] }}" 
+                                            <input type="number" name="max_reservations_per_slot" min="1" max="1000" step="1" required value="{{ $settings['max_reservations_per_slot'] }}" 
                                                 class="w-full rounded-2xl border-stone-200 bg-stone-50 px-5 py-4 text-sm font-bold focus:border-red-500 focus:ring-red-500/10">
                                             <span class="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400">Orang</span>
                                         </div>
@@ -60,7 +60,7 @@
                                     <div class="space-y-2">
                                         <label class="text-xs font-bold uppercase tracking-wider text-stone-400">Durasi Per Sesi</label>
                                         <div class="relative">
-                                            <input type="number" name="consultation_duration_minutes" value="{{ $settings['consultation_duration_minutes'] }}" 
+                                            <input type="number" name="consultation_duration_minutes" min="10" max="480" step="1" required value="{{ $settings['consultation_duration_minutes'] }}" 
                                                 class="w-full rounded-2xl border-stone-200 bg-stone-50 px-5 py-4 text-sm font-bold focus:border-red-500 focus:ring-red-500/10">
                                             <span class="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400">Menit</span>
                                         </div>
@@ -130,7 +130,7 @@
                         <div class="p-7">
                             <form action="{{ route('superadmin.service-types.store') }}" method="POST" class="flex gap-3">
                                 @csrf
-                                <input type="text" name="name" placeholder="Nama layanan baru..." required class="flex-1 rounded-2xl border-stone-200 bg-stone-50 px-5 py-3.5 text-sm font-bold focus:border-red-500 focus:ring-red-500/10">
+                                <input type="text" name="name" maxlength="255" placeholder="Nama layanan baru..." required class="flex-1 rounded-2xl border-stone-200 bg-stone-50 px-5 py-3.5 text-sm font-bold focus:border-red-500 focus:ring-red-500/10">
                                 <button type="submit" class="shrink-0 rounded-2xl bg-red-600 px-5 py-3.5 text-sm font-black text-white shadow-md hover:bg-red-700">Tambah</button>
                             </form>
 
@@ -146,7 +146,7 @@
                                         <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                                             <form action="{{ route('superadmin.service-types.toggle', $type) }}" method="POST">
                                                 @csrf @method('PATCH')
-                                                <button type="submit" title="{{ $type->is_active ? 'Nonaktifkan' : 'Aktifkan' }}" class="rounded-xl border border-stone-200 bg-white p-2 text-stone-500 hover:text-red-600">
+                                                <button type="submit" title="{{ $type->is_active ? 'Nonaktifkan' : 'Aktifkan' }}" onclick="return confirm('{{ $type->is_active ? 'Nonaktifkan jenis layanan ini?' : 'Aktifkan jenis layanan ini?' }}')" class="rounded-xl border border-stone-200 bg-white p-2 text-stone-500 hover:text-red-600">
                                                     @if($type->is_active)
                                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
                                                     @else
@@ -174,14 +174,14 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         @if(session('success'))
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
-                text: '{{ session('success') }}',
+                text: @json(session('success')),
                 confirmButtonText: 'Tutup',
                 confirmButtonColor: '#000000',
                 background: '#ffffff',

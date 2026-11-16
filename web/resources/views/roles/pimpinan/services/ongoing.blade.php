@@ -19,7 +19,7 @@
             </div>
         </div>
 
-        <div class="mt-6 grid gap-5 md:grid-cols-3">
+        <div class="mt-6 grid gap-5 md:grid-cols-4">
             <div class="rounded-3xl border border-stone-200/80 bg-white p-5 shadow-[0_14px_35px_rgba(28,25,23,0.06)]">
                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-stone-400">Pending</p>
                 <p class="mt-2 text-2xl font-black text-stone-900">{{ number_format((int) ($statusCounts['pending'] ?? 0)) }}</p>
@@ -32,6 +32,10 @@
                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-stone-400">In Progress</p>
                 <p class="mt-2 text-2xl font-black text-stone-900">{{ number_format((int) ($statusCounts['in_progress'] ?? 0)) }}</p>
             </div>
+            <div class="rounded-3xl border border-stone-200/80 bg-white p-5 shadow-[0_14px_35px_rgba(28,25,23,0.06)]">
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-700">Dialihkan ke L2</p>
+                <p class="mt-2 text-2xl font-black text-stone-900">{{ number_format((int) ($statusCounts['dialihkan_ke_l2'] ?? 0)) }}</p>
+            </div>
         </div>
 
         <section class="mt-6 rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
@@ -40,11 +44,11 @@
 
             <form method="GET" action="{{ route('pimpinan.layanan-berjalan') }}" class="mt-5 grid gap-3 md:grid-cols-6">
                 <input
-                    type="text"
+                    type="search"
                     name="q"
                     value="{{ $filters['q'] ?? '' }}"
                     placeholder="Cari kode, nama tamu, agent"
-                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10"
+                    class="md:col-span-2 rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10" maxlength="100"
                 >
                 <select name="agent_id" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                     <option value="">Semua Agent</option>
@@ -54,7 +58,8 @@
                 </select>
                 <select name="status" class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-500/10">
                     <option value="">Semua Status</option>
-                    <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>pending</option>
+                    <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Menunggu</option>
+                    <option value="dialihkan_ke_l2" {{ ($filters['status'] ?? '') === 'dialihkan_ke_l2' ? 'selected' : '' }}>Dialihkan ke L2</option>
                     <option value="checked_in_front_desk" {{ ($filters['status'] ?? '') === 'checked_in_front_desk' ? 'selected' : '' }}>checked in front desk</option>
                     <option value="in_progress" {{ ($filters['status'] ?? '') === 'in_progress' ? 'selected' : '' }}>in progress</option>
                 </select>
@@ -83,7 +88,7 @@
                                 <td class="px-4 py-3">{{ $reservation->nama_lengkap }}</td>
                                 <td class="px-4 py-3">{{ optional($reservation->agent)->name ?? '-' }}</td>
                                 <td class="px-4 py-3">
-                                    <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-700">{{ str_replace('_', ' ', $reservation->status) }}</span>
+                                    <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-700">{{ $reservation->status_label }}</span>
                                 </td>
                             </tr>
                         @empty
@@ -103,3 +108,4 @@
 </div>
 
 @endsection
+

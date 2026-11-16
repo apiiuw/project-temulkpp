@@ -1,4 +1,5 @@
-<aside class="sidebar-transition hidden w-96 shrink-0 border-r border-stone-200/80 bg-[linear-gradient(180deg,#2b1b12_0%,#4a2b17_100%)] text-white lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
+<aside id="app-sidebar" class="app-sidebar-drawer sidebar-transition relative hidden w-96 shrink-0 flex-col border-r border-stone-200/80 bg-[linear-gradient(180deg,#201516_0%,#2f1e20_100%)] text-white lg:flex lg:h-screen lg:overflow-y-auto">
+    <button type="button" class="app-sidebar-close" data-mobile-sidebar-close aria-label="Tutup navigasi" onclick="document.body.classList.remove('mobile-sidebar-open');">×</button>
     <div class="border-b border-white/10 p-4">
         <div class="flex items-center gap-4">
             <div class="sidebar-transition flex items-center justify-center rounded-2xl bg-white px-3 py-3 shadow-sm shrink-0">
@@ -40,10 +41,21 @@
                     </a>
                 @endforeach
             </nav>
+
+            <div class="mt-8 border-t border-white/10 pt-6">
+                <a
+                    href="{{ route('login') }}"
+                    title="Masuk sebagai aktor lain di browser yang sama"
+                    class="sidebar-center-content sidebar-transition flex w-full items-center justify-center rounded-2xl border border-dashed border-white/14 px-4 py-2.5 text-sm font-bold text-white/70 transition-all duration-300 hover:border-white/30 hover:text-white"
+                >
+                    <span class="sidebar-hide-content sidebar-transition whitespace-nowrap">+ Masuk akun lain</span>
+                </a>
+            </div>
         </div>
 
         <form method="POST" action="{{ route('logout') }}" class="mt-8 pt-6">
             @csrf
+            <input type="hidden" name="guard" value="pimpinan">
             <button type="submit" class="sidebar-center-content sidebar-transition flex w-full items-center justify-center rounded-2xl border border-white/14 bg-white/8 px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-white/14">
                 <span class="sidebar-hide-content sidebar-transition mr-2">Logout</span>
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>

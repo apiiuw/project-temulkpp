@@ -14,7 +14,7 @@
         <!-- Styles / Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-white text-[#1b1b18] min-h-screen">
+    <body class="public-layout min-h-screen overflow-x-clip bg-white text-[#1b1b18]">
         @include('partials.navbar')
         @yield('container')
         @include('partials.footer')

@@ -56,16 +56,16 @@
 
                 <div class="mt-4">
                     <label for="catatan" class="block text-xs font-semibold text-stone-600">Ringkasan Penanganan</label>
-                    <textarea id="catatan" name="catatan" required rows="5" class="mt-2 w-full rounded-xl border border-stone-200 p-3 text-sm outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-500/10" placeholder="Tuliskan hasil pelayanan, keputusan, dan tindak lanjut.">{{ old('catatan') }}</textarea>
+                    <textarea id="catatan" name="catatan" required minlength="5" rows="5" class="mt-2 w-full rounded-xl border border-stone-200 p-3 text-sm outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-500/10" placeholder="Tuliskan hasil pelayanan, keputusan, dan tindak lanjut.">{{ old('catatan') }}</textarea>
                 </div>
 
                 <div class="mt-4">
-                    <label class="block text-xs font-semibold text-stone-600">File Lampiran (Opsional)</label>
+                    <label class="block text-xs font-semibold text-stone-600">Berkas Lampiran (Opsional)</label>
                     <input type="file" name="file_catatan" class="mt-2 w-full cursor-pointer text-sm text-stone-500 file:mr-4 file:rounded-full file:border-0 file:bg-red-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-red-700 hover:file:bg-red-100">
                 </div>
 
                 <button type="submit" id="end-session-btn" class="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-stone-900 px-6 py-3 text-sm font-bold text-white opacity-50 transition" disabled>
-                    Upload Hasil Pelayanan
+                    Unggah Hasil Pelayanan
                 </button>
                 <p id="helper-text" class="mt-3 text-center text-xs text-stone-500">Isi catatan terlebih dahulu untuk mengaktifkan tombol upload.</p>
             </form>

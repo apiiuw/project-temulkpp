@@ -13,7 +13,7 @@ class LoginController extends Controller
 {
     public function create(): View|RedirectResponse
     {
-        if (Auth::check() && preg_match('/^agent\.[1-7]@temulkpp\.com$/', strtolower((string) Auth::user()->email))) {
+        if (Auth::guard('agent')->check()) {
             return redirect()->route('agent.dashboard');
         }
 
@@ -29,13 +29,7 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! preg_match('/^agent\.[1-7]@temulkpp\.com$/', strtolower($credentials['email']))) {
-            throw ValidationException::withMessages([
-                'email' => 'Gunakan akun agent yang terdaftar untuk masuk ke halaman ini.',
-            ]);
-        }
-
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::guard('agent')->attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => 'Email atau password agent tidak sesuai.',
             ]);
@@ -48,9 +42,10 @@ class LoginController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::logout();
+        Auth::guard('agent')->logout();
 
-        $request->session()->invalidate();
+        // Jangan invalidate seluruh session: aktor lain yang sedang login
+        // di browser yang sama harus tetap utuh.
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
