@@ -50,7 +50,8 @@
                             <div class="bg-white p-6 rounded-2xl shadow-inner border border-emerald-50">
                                 @php
                                     $qrCode = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(220)
-                                        ->margin(1)
+                                        ->errorCorrection('H')
+                                        ->margin(2)
                                         ->generate(session('kode_reservasi'));
                                 @endphp
                                 <div class="flex justify-center mb-4 transform transition-transform duration-500 hover:scale-105">

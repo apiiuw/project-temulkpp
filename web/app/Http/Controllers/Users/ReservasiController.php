@@ -124,7 +124,8 @@ class ReservasiController extends Controller
         $reservation = Reservation::where('kode_reservasi', $kodeReservasi)->firstOrFail();
         $qrCodeSvg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
             ->size(180)
-            ->margin(1)
+            ->errorCorrection('H')
+            ->margin(2)
             ->generate($reservation->kode_reservasi);
 
         $pdf = Pdf::loadView('roles.users.reservasi.pdf', [

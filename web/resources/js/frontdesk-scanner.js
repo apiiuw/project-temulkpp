@@ -427,6 +427,7 @@ export function initializeFrontDeskScanner() {
                             try {
                                 const result = await QrScanner.scanImage(videoElement, {
                                     qrEngine,
+                                    canvas: offscreenCanvas,
                                     scanRegion: {
                                         x: sx,
                                         y: sy,
