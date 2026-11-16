@@ -140,17 +140,47 @@ export function initializeFrontDeskScanner() {
     };
 
     const fitScannerVideoBox = () => {
+        const container = preview?.parentElement;
         const videoElement = preview?.querySelector('video');
 
-        if (!videoElement) {
+        if (!preview || !container || !videoElement || !container.clientWidth || !container.clientHeight) {
             return;
         }
 
-        // Keep the video element's natural aspect ratio so html5-qrcode's
-        // videoWidth/clientWidth and videoHeight/clientHeight ratios match.
+        const videoWidth = videoElement.videoWidth;
+        const videoHeight = videoElement.videoHeight;
+
+        if (!videoWidth || !videoHeight) {
+            return;
+        }
+
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        const videoRatio = videoWidth / videoHeight;
+        const containerRatio = containerWidth / containerHeight;
+
+        let targetWidth = containerWidth;
+        let targetHeight = containerHeight;
+
+        if (videoRatio > containerRatio) {
+            targetHeight = containerHeight;
+            targetWidth = Math.round(containerHeight * videoRatio);
+        } else {
+            targetWidth = containerWidth;
+            targetHeight = Math.round(containerWidth / videoRatio);
+        }
+
+        preview.style.width = `${targetWidth}px`;
+        preview.style.height = `${targetHeight}px`;
+        preview.style.left = '50%';
+        preview.style.top = '50%';
+        preview.style.right = 'auto';
+        preview.style.bottom = 'auto';
+        preview.style.transform = 'translate(-50%, -50%)';
+
         videoElement.style.width = '100%';
-        videoElement.style.height = 'auto';
-        videoElement.style.objectFit = 'contain';
+        videoElement.style.height = '100%';
+        videoElement.style.objectFit = 'fill';
     };
 
     const observeScannerVideo = () => {
@@ -219,7 +249,16 @@ export function initializeFrontDeskScanner() {
             scanner = null;
         }
 
-        preview?.classList.add('hidden');
+        if (preview) {
+            preview.classList.add('hidden');
+            preview.style.width = '';
+            preview.style.height = '';
+            preview.style.left = '';
+            preview.style.top = '';
+            preview.style.right = '';
+            preview.style.bottom = '';
+            preview.style.transform = '';
+        }
         placeholder?.classList.remove('hidden');
     };
 
@@ -365,6 +404,7 @@ export function initializeFrontDeskScanner() {
             }
 
             placeholder.classList.add('hidden');
+            fitScannerVideoBox();
             setScannerStatus('Kamera siap. Arahkan QR ke tengah frame.', 'ok');
         })();
 
