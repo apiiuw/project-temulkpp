@@ -142,13 +142,15 @@ export function initializeFrontDeskScanner() {
     const fitScannerVideoBox = () => {
         const videoElement = preview?.querySelector('video');
 
-        if (!videoElement || !preview.clientWidth) {
+        if (!videoElement) {
             return;
         }
 
+        // Keep the video element's natural aspect ratio so html5-qrcode's
+        // videoWidth/clientWidth and videoHeight/clientHeight ratios match.
         videoElement.style.width = '100%';
-        videoElement.style.height = `${preview.clientWidth}px`;
-        videoElement.style.objectFit = 'cover';
+        videoElement.style.height = 'auto';
+        videoElement.style.objectFit = 'contain';
     };
 
     const observeScannerVideo = () => {
