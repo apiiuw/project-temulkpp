@@ -6,6 +6,7 @@ use App\Models\Agent;
 use App\Models\Pimpinan;
 use App\Models\Superadmin;
 use Closure;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
@@ -25,7 +26,24 @@ class ResolveTabAuth
         $tabId = $this->extractTabId($request);
 
         if ($tabId === null) {
-            return $next($request);
+            $response = $next($request);
+
+        if ($response instanceof RedirectResponse) {
+            $targetUrl = $response->getTargetUrl();
+            $parsed = parse_url($targetUrl);
+            $path = $parsed['path'] ?? '';
+            $isSameHost = ! isset($parsed['host']) || $parsed['host'] === $request->getHost();
+
+            if ($isSameHost && $path !== '/auth/login') {
+                parse_str($parsed['query'] ?? '', $query);
+                if (! array_key_exists('_tab', $query)) {
+                    $separator = str_contains($targetUrl, '?') ? '&' : '?';
+                    $response->setTargetUrl($targetUrl . $separator . '_tab=' . urlencode($tabId));
+                }
+            }
+        }
+
+        return $response;
         }
 
         URL::defaults(['_tab' => $tabId]);
@@ -48,7 +66,24 @@ class ResolveTabAuth
             }
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if ($response instanceof RedirectResponse) {
+            $targetUrl = $response->getTargetUrl();
+            $parsed = parse_url($targetUrl);
+            $path = $parsed['path'] ?? '';
+            $isSameHost = ! isset($parsed['host']) || $parsed['host'] === $request->getHost();
+
+            if ($isSameHost && $path !== '/auth/login') {
+                parse_str($parsed['query'] ?? '', $query);
+                if (! array_key_exists('_tab', $query)) {
+                    $separator = str_contains($targetUrl, '?') ? '&' : '?';
+                    $response->setTargetUrl($targetUrl . $separator . '_tab=' . urlencode($tabId));
+                }
+            }
+        }
+
+        return $response;
     }
 
     private function extractTabId(Request $request): ?string

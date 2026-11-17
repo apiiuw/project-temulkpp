@@ -15,9 +15,30 @@ if (activeTabId) {
         form.appendChild(input);
     };
 
-    document.addEventListener('DOMContentLoaded', () => {
+    const appendTabToLink = (anchor) => {
+        const href = anchor?.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+            return;
+        }
+        try {
+            const url = new URL(href, window.location.origin);
+            if (url.origin !== window.location.origin || url.pathname === '/auth/login' || url.searchParams.has('_tab')) {
+                return;
+            }
+            url.searchParams.set('_tab', activeTabId);
+            anchor.setAttribute('href', url.toString());
+        } catch {
+            // Ignore malformed URLs.
+        }
+    };
+
+    const syncTabElements = () => {
         document.querySelectorAll('form').forEach(appendTabInput);
-    });
+        document.querySelectorAll('a[href]').forEach(appendTabToLink);
+    };
+
+    document.addEventListener('DOMContentLoaded', syncTabElements);
+    new MutationObserver(syncTabElements).observe(document.documentElement, { childList: true, subtree: true });
 
     document.addEventListener('submit', (event) => {
         if (event.target instanceof HTMLFormElement) {

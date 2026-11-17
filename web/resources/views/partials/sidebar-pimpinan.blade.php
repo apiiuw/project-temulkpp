@@ -25,12 +25,13 @@
 
             @php
                 $roleMenus = \App\Models\RoleMenu::where('role', 'pimpinan')->with('menu')->get()->pluck('menu');
+                $tabQuery = request()->query('_tab') ? ['_tab' => request()->query('_tab')] : [];
             @endphp
 
             <nav class="space-y-2">
                 @foreach ($roleMenus as $menu)
                     <a
-                        href="{{ route($menu->route) }}"
+                        href="{{ route($menu->route, $tabQuery) }}"
                         title="{{ $menu->name }}"
                         class="sidebar-center-content sidebar-transition flex items-center gap-3 rounded-2xl px-4 py-2 text-sm font-bold transition-all duration-300 {{ request()->routeIs($menu->route . '*') ? 'bg-white text-amber-800 shadow-[0_14px_30px_rgba(255,255,255,0.16)]' : 'bg-white/5 text-white/82 hover:bg-white/12' }}"
                     >
