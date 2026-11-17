@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Agent;
+use App\Models\Pimpinan;
+use App\Models\Superadmin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -19,11 +23,18 @@ class LoginController extends Controller
      */
     private const GUARDS = ['agent', 'pimpinan', 'superadmin'];
 
-    public function create(): View
+    /** @var array<string, class-string> */
+    private const GUARD_MODELS = [
+        'agent' => Agent::class,
+        'pimpinan' => Pimpinan::class,
+        'superadmin' => Superadmin::class,
+    ];
+
+    public function create(Request $request): View
     {
         return view('auth.login', [
             'title' => 'Login Internal',
-            'activeSessions' => $this->activeSessions(),
+            'activeSessions' => $this->activeSessions($request),
         ]);
     }
 
@@ -35,25 +46,32 @@ class LoginController extends Controller
         ]);
 
         foreach (self::GUARDS as $guard) {
-            if (! Auth::guard($guard)->attempt($credentials, $request->boolean('remember'))) {
+            $provider = Auth::guard($guard)->getProvider();
+            $user = $provider->retrieveByCredentials(['email' => $credentials['email']]);
+
+            if (! $user || ! $provider->validateCredentials($user, ['password' => $credentials['password']])) {
                 continue;
             }
 
             // Aktor non-aktif tidak boleh masuk (Superadmin selalu aktif).
-            if ($guard !== 'superadmin' && ! Auth::guard($guard)->user()->is_active) {
-                Auth::guard($guard)->logout();
-
+            if ($guard !== 'superadmin' && ! $user->is_active) {
                 return back()->with('error_inactive', sprintf(
                     'Akun %s Anda telah dinonaktifkan oleh Superadmin.',
                     Str::ucfirst($guard)
                 ));
             }
 
-            // Regenerate hanya mengganti ID session, data (termasuk login
-            // aktor lain yang sudah ada di browser ini) tetap dipertahankan.
-            $request->session()->regenerate();
+            $tabId = $this->resolveLoginTabId($request);
 
-            return redirect()->intended(route("{$guard}.dashboard"));
+            // Simpan akun per-tab agar banyak akun (termasuk role sama) bisa aktif di tab terpisah.
+            $request->session()->put("tab_auth.{$tabId}", [
+                $guard => $user->getAuthIdentifier(),
+            ]);
+
+            $request->session()->regenerate();
+            URL::defaults(['_tab' => $tabId]);
+
+            return redirect()->route("{$guard}.dashboard", ['_tab' => $tabId]);
         }
 
         throw ValidationException::withMessages([
@@ -62,15 +80,32 @@ class LoginController extends Controller
     }
 
     /**
-     * Logout hanya aktor yang diminta. Session aktor lain tetap utuh,
-     * kecuali tidak ada guard tertentu (logout semua).
+     * Logout hanya tab/aktor yang diminta. Session tab lain tetap utuh,
+     * kecuali tanpa parameter spesifik (logout semua).
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $requested = $request->input('guard');
-        $singleGuard = is_string($requested) && in_array($requested, self::GUARDS, true)
-            ? $requested
+        $tabId = $this->validTabId($request->input('_tab') ?? $request->query('_tab'));
+        $requestedGuard = $request->input('guard');
+        $singleGuard = is_string($requestedGuard) && in_array($requestedGuard, self::GUARDS, true)
+            ? $requestedGuard
             : null;
+
+        if ($tabId !== null) {
+            if ($singleGuard !== null) {
+                $request->session()->forget("tab_auth.{$tabId}.{$singleGuard}");
+                if (empty($request->session()->get("tab_auth.{$tabId}", []))) {
+                    $request->session()->forget("tab_auth.{$tabId}");
+                }
+            } else {
+                $request->session()->forget("tab_auth.{$tabId}");
+            }
+
+            $request->session()->regenerateToken();
+            URL::defaults([]);
+
+            return redirect()->route('login');
+        }
 
         foreach ($singleGuard !== null ? [$singleGuard] : self::GUARDS as $guard) {
             if (Auth::guard($guard)->check()) {
@@ -79,41 +114,90 @@ class LoginController extends Controller
         }
 
         if ($singleGuard !== null) {
-            // Aktor lain yang sedang login di browser ini tetap utuh.
             $request->session()->regenerateToken();
         } else {
-            // Tanpa guard spesifik: bersihkan seluruh session (logout semua).
+            $request->session()->forget('tab_auth');
             $request->session()->invalidate();
         }
+
+        URL::defaults([]);
 
         return redirect()->route('login');
     }
 
     /**
-     * Daftar aktor yang sedang login di browser ini.
+     * Daftar sesi akun yang sedang login di browser ini (per tab + legacy guard).
      *
-     * @return list<array{guard: string, label: string, name: string, email: string, dashboard: string}>
+     * @return list<array{tab_id: string|null, guard: string, label: string, name: string, email: string, dashboard: string}>
      */
-    private function activeSessions(): array
+    private function activeSessions(Request $request): array
     {
         $sessions = [];
+        $tabSessions = $request->session()->get('tab_auth', []);
 
-        foreach (self::GUARDS as $guard) {
-            $user = Auth::guard($guard)->user();
+        if (is_array($tabSessions)) {
+            foreach ($tabSessions as $tabId => $guards) {
+                if (! is_string($tabId) || ! is_array($guards)) {
+                    continue;
+                }
 
-            if (! $user) {
-                continue;
+                foreach ($guards as $guard => $userId) {
+                    $modelClass = self::GUARD_MODELS[$guard] ?? null;
+                    if (! $modelClass || ! $userId) {
+                        continue;
+                    }
+
+                    $user = $modelClass::query()->find($userId);
+                    if (! $user) {
+                        continue;
+                    }
+
+                    $sessions[] = [
+                        'tab_id' => $tabId,
+                        'guard' => $guard,
+                        'label' => Str::ucfirst($guard),
+                        'name' => (string) $user->name,
+                        'email' => (string) $user->email,
+                        'dashboard' => route("{$guard}.dashboard", ['_tab' => $tabId]),
+                    ];
+                }
             }
+        }
 
-            $sessions[] = [
-                'guard' => $guard,
-                'label' => Str::ucfirst($guard),
-                'name' => (string) $user->name,
-                'email' => (string) $user->email,
-                'dashboard' => route("{$guard}.dashboard"),
-            ];
+        if ($sessions === []) {
+            foreach (self::GUARDS as $guard) {
+                $user = Auth::guard($guard)->user();
+                if (! $user) {
+                    continue;
+                }
+
+                $sessions[] = [
+                    'tab_id' => null,
+                    'guard' => $guard,
+                    'label' => Str::ucfirst($guard),
+                    'name' => (string) $user->name,
+                    'email' => (string) $user->email,
+                    'dashboard' => route("{$guard}.dashboard"),
+                ];
+            }
         }
 
         return $sessions;
+    }
+
+    private function resolveLoginTabId(Request $request): string
+    {
+        $provided = $this->validTabId($request->input('_tab') ?? $request->query('_tab'));
+
+        return $provided ?? Str::lower(Str::random(10));
+    }
+
+    private function validTabId(mixed $raw): ?string
+    {
+        if (! is_string($raw) || ! preg_match('/^[A-Za-z0-9_-]{4,32}$/', $raw)) {
+            return null;
+        }
+
+        return $raw;
     }
 }

@@ -48,60 +48,6 @@
                             </div>
                         @endif
 
-                        @if (!empty($activeSessions))
-                            <div class="mt-6 rounded-2xl border border-stone-200 bg-white/70 px-4 py-4">
-                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-stone-500">Sedang login di browser ini</p>
-                                <p class="mt-1 text-[11px] leading-relaxed text-stone-500">
-                                    Bisa masuk sebagai aktor lain tanpa harus logout.
-                                </p>
-
-                                <ul class="mt-3 space-y-2">
-                                    @foreach ($activeSessions as $activeSession)
-                                        <li class="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
-                                            <span class="min-w-0">
-                                                <span class="block truncate text-sm font-bold text-stone-800">
-                                                    {{ $activeSession['label'] }} · {{ $activeSession['name'] }}
-                                                </span>
-                                                <span class="block truncate text-xs text-stone-500">{{ $activeSession['email'] }}</span>
-                                            </span>
-
-                                            <span class="flex shrink-0 items-center gap-2">
-                                                <a
-                                                    href="{{ $activeSession['dashboard'] }}"
-                                                    class="rounded-lg bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-stone-700"
-                                                >
-                                                    Dashboard
-                                                </a>
-
-                                                <form method="POST" action="{{ route('logout') }}">
-                                                    @csrf
-                                                    <input type="hidden" name="guard" value="{{ $activeSession['guard'] }}">
-                                                    <button
-                                                        type="submit"
-                                                        class="rounded-lg border border-stone-300 px-3 py-1.5 text-[11px] font-bold text-stone-600 transition-colors hover:border-stone-400 hover:text-stone-800"
-                                                    >
-                                                        Logout
-                                                    </button>
-                                                </form>
-                                            </span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-
-                                @if (count($activeSessions) > 1)
-                                    <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                                        @csrf
-                                        <button
-                                            type="submit"
-                                            class="text-[11px] font-bold text-red-700 underline underline-offset-2 transition-colors hover:text-red-900"
-                                        >
-                                            Logout dari semua aktor
-                                        </button>
-                                    </form>
-                                @endif
-                            </div>
-                        @endif
-
                         <form method="POST" action="{{ route('login.store') }}" class="mt-8 space-y-5">
                             @csrf
 

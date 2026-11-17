@@ -41,19 +41,9 @@
                     </a>
                 @endforeach
             </nav>
-
-            <div class="mt-8 border-t border-white/10 pt-6">
-                <a
-                    href="{{ route('login') }}"
-                    title="Masuk sebagai aktor lain di browser yang sama"
-                    class="sidebar-center-content sidebar-transition flex w-full items-center justify-center rounded-2xl border border-dashed border-white/14 px-4 py-2.5 text-sm font-bold text-white/70 transition-all duration-300 hover:border-white/30 hover:text-white"
-                >
-                    <span class="sidebar-hide-content sidebar-transition whitespace-nowrap">+ Masuk akun lain</span>
-                </a>
-            </div>
         </div>
 
-        <form method="POST" action="{{ route('logout') }}" class="mt-8 pt-6">
+        <form method="POST" action="{{ route('logout') }}" class="mt-8 border-t border-white/10 pt-6">
             @csrf
             <input type="hidden" name="guard" value="superadmin">
             <button type="submit" class="sidebar-center-content sidebar-transition flex w-full items-center justify-center rounded-2xl border border-white/14 bg-white/8 px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-white/14">

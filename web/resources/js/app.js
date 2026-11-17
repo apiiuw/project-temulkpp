@@ -1,6 +1,48 @@
 import './bootstrap';
 import { initFlowbite } from 'flowbite';
 
+const activeTabId = new URLSearchParams(window.location.search).get('_tab');
+
+if (activeTabId) {
+    const appendTabInput = (form) => {
+        if (!form || form.querySelector('input[name="_tab"]')) {
+            return;
+        }
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = '_tab';
+        input.value = activeTabId;
+        form.appendChild(input);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('form').forEach(appendTabInput);
+    });
+
+    document.addEventListener('submit', (event) => {
+        if (event.target instanceof HTMLFormElement) {
+            appendTabInput(event.target);
+        }
+    }, true);
+
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = (input, init = {}) => {
+        if (typeof input === 'string' && input.startsWith('/')) {
+            const url = new URL(input, window.location.origin);
+            if (!url.searchParams.has('_tab')) {
+                url.searchParams.set('_tab', activeTabId);
+            }
+            return originalFetch(url.toString(), init);
+        }
+
+        if (input instanceof URL && input.origin === window.location.origin && !input.searchParams.has('_tab')) {
+            input.searchParams.set('_tab', activeTabId);
+        }
+
+        return originalFetch(input, init);
+    };
+}
+
 // Initialize Flowbite components
 document.addEventListener('DOMContentLoaded', () => {
     initFlowbite();
