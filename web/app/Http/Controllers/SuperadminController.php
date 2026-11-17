@@ -87,27 +87,7 @@ class SuperadminController extends Controller
             $agentsQuery->where('is_active', $status === 'active');
         }
         
-        if ($sort === 'latest') {
-            $agents = $agentsQuery->latest('id')->paginate(5)->withQueryString();
-        } else {
-            $perPage = 5;
-            $currentPage = LengthAwarePaginator::resolveCurrentPage();
-            $sortedAgents = $agentsQuery
-                ->get()
-                ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE, $sort === 'name_desc')
-                ->values();
-
-            $agents = (new LengthAwarePaginator(
-                $sortedAgents->forPage($currentPage, $perPage)->values(),
-                $sortedAgents->count(),
-                $perPage,
-                $currentPage,
-                [
-                    'path' => $request->url(),
-                    'query' => $request->query(),
-                ]
-            ));
-        }
+        $agents = $this->paginateMasterRecords($agentsQuery, $request, $sort);
 
         $activeAgentCount = Agent::query()->where('is_active', true)->count();
         $inactiveAgentCount = Agent::query()->where('is_active', false)->count();
@@ -291,9 +271,11 @@ class SuperadminController extends Controller
         $validatedFilters = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'in:active,inactive'],
+            'sort' => ['nullable', 'in:name_asc,name_desc,latest'],
         ]);
         $search = trim((string) ($validatedFilters['q'] ?? ''));
         $status = $validatedFilters['status'] ?? null;
+        $sort = $validatedFilters['sort'] ?? 'name_asc';
         
         $pimpinansQuery = Pimpinan::query();
         
@@ -308,7 +290,7 @@ class SuperadminController extends Controller
             $pimpinansQuery->where('is_active', $status === 'active');
         }
         
-        $pimpinans = $pimpinansQuery->latest('id')->paginate(5)->withQueryString();
+        $pimpinans = $this->paginateMasterRecords($pimpinansQuery, $request, $sort);
         $activePimpinanCount = Pimpinan::query()->where('is_active', true)->count();
         $inactivePimpinanCount = Pimpinan::query()->where('is_active', false)->count();
         
@@ -320,8 +302,33 @@ class SuperadminController extends Controller
             'filters' => [
                 'q' => $search,
                 'status' => $status,
+                'sort' => $sort,
             ]
         ]);
+    }
+
+    private function paginateMasterRecords(Builder $query, Request $request, string $sort, int $perPage = 5): LengthAwarePaginator
+    {
+        if ($sort === 'latest') {
+            return $query->latest('id')->paginate($perPage)->withQueryString();
+        }
+
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $sorted = $query
+            ->get()
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE, $sort === 'name_desc')
+            ->values();
+
+        return new LengthAwarePaginator(
+            $sorted->forPage($currentPage, $perPage)->values(),
+            $sorted->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
     }
 
     public function storePimpinan(Request $request)
