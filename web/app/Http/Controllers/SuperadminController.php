@@ -21,6 +21,8 @@ class SuperadminController extends Controller
     use BuildsRatingDashboard;
 
     private const MAX_EXPORT_ROWS = 100;
+    private const PROCESS_STATUSES = ['pending', 'checked_in_front_desk', 'in_progress'];
+    private const UNFINISHED_TEST_STATUSES = ['dialihkan_ke_l2', 'expired_front_desk'];
     private const ONGOING_STATUSES = ['pending', 'checked_in_front_desk', 'in_progress', 'dialihkan_ke_l2'];
 
     public function dashboard(): View
@@ -55,7 +57,10 @@ class SuperadminController extends Controller
             'title' => 'Dashboard Superadmin',
             'jenisData' => $jenis,
             'completedCount' => Reservation::query()->jenisData($jenis)->where('status', 'completed')->count(),
-            'unfinishedCount' => Reservation::query()->jenisData($jenis)->whereIn('status', self::ONGOING_STATUSES)->count(),
+            'inProgressCount' => Reservation::query()->jenisData($jenis)->whereIn('status', self::PROCESS_STATUSES)->count(),
+            'unfinishedCount' => $jenis === 'uji'
+                ? Reservation::query()->jenisData($jenis)->whereIn('status', self::UNFINISHED_TEST_STATUSES)->count()
+                : Reservation::query()->jenisData($jenis)->where('status', 'dialihkan_ke_l2')->count(),
             'completedReservations' => $completedReservations,
             'unfinishedReservations' => $unfinishedReservations,
             'agentPerformance' => $agentPerformance,

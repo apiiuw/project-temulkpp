@@ -44,17 +44,25 @@
             });
         </script>
 
-        <div id="overview" class="mt-6 grid gap-5 md:grid-cols-2">
+        <div id="overview" class="mt-6 grid gap-5 {{ $onlyTestData ? 'md:grid-cols-3' : 'md:grid-cols-2' }}">
             <div class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
                 <p class="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">Layanan Selesai</p>
                 <h2 class="mt-3 text-3xl font-black text-stone-900">{{ number_format($completedCount) }}</h2>
                 <p class="mt-3 text-sm leading-relaxed text-stone-600">Total layanan yang sudah selesai dari seluruh agent.</p>
             </div>
 
+            @if($onlyTestData)
+            <div class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">Layanan Proses</p>
+                <h2 class="mt-3 text-3xl font-black text-stone-900">{{ number_format($inProgressCount) }}</h2>
+                <p class="mt-3 text-sm leading-relaxed text-stone-600">Reservasi yang masih pending, check-in, atau sedang diproses.</p>
+            </div>
+            @endif
+
             <div class="rounded-[28px] border border-stone-200/80 bg-white p-6 shadow-[0_18px_45px_rgba(28,25,23,0.06)]">
                 <p class="text-xs font-bold uppercase tracking-[0.22em] text-stone-400">Layanan Tidak Selesai</p>
                 <h2 class="mt-3 text-3xl font-black text-stone-900">{{ number_format($unfinishedCount) }}</h2>
-                <p class="mt-3 text-sm leading-relaxed text-stone-600">Reservasi yang masih pending, check-in, atau sedang diproses.</p>
+                <p class="mt-3 text-sm leading-relaxed text-stone-600">{{ $onlyTestData ? 'Reservasi yang dialihkan ke L2 atau kedaluwarsa.' : 'Reservasi yang dialihkan ke L2.' }}</p>
             </div>
         </div>
 
