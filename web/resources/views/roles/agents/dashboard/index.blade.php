@@ -256,7 +256,7 @@
                 supersetDomain: SUPERSET_DOMAIN,
                 mountPoint: container,
                 fetchGuestToken: async () => {
-                    const response = await fetch(`{{ route('superset.guest-token') }}?dashboardId=${DASHBOARD_ID}${dataParam}`);
+                    const response = await fetch(`{{ route('superset.guest-token') }}?dashboardId=${DASHBOARD_ID}${dataParam}{{ request()->query('_tab') ? '&_tab=' . urlencode(request()->query('_tab')) : '' }}`);
                     if (!response.ok) {
                         const errData = await response.json();
                         throw new Error(errData.error || 'Gagal mengambil token');

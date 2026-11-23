@@ -48,16 +48,22 @@ if (activeTabId) {
 
     const originalFetch = window.fetch.bind(window);
     window.fetch = (input, init = {}) => {
-        if (typeof input === 'string' && input.startsWith('/')) {
-            const url = new URL(input, window.location.origin);
-            if (!url.searchParams.has('_tab')) {
-                url.searchParams.set('_tab', activeTabId);
+        if (typeof input === 'string' || input instanceof URL) {
+            try {
+                const url = new URL(input.toString(), window.location.origin);
+                if (url.origin === window.location.origin) {
+                    if (url.pathname !== '/auth/login' && !url.searchParams.has('_tab')) {
+                        url.searchParams.set('_tab', activeTabId);
+                    }
+                    const headers = new Headers(init?.headers || {});
+                    if (!headers.has('X-Tab-Id')) {
+                        headers.set('X-Tab-Id', activeTabId);
+                    }
+                    return originalFetch(url.toString(), { ...init, headers });
+                }
+            } catch {
+                // Fall through to originalFetch for non-standard URLs.
             }
-            return originalFetch(url.toString(), init);
-        }
-
-        if (input instanceof URL && input.origin === window.location.origin && !input.searchParams.has('_tab')) {
-            input.searchParams.set('_tab', activeTabId);
         }
 
         return originalFetch(input, init);
