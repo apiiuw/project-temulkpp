@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>embed test</title>
+<style>#c{width:1000px;height:700px;border:2px solid red;position:relative}
+#c iframe{width:100%!important;height:700px!important;border:none!important}</style>
+</head>
+<body>
+<div id="c"><div id="loader">LOADING...</div></div>
+<pre id="log"></pre>
+<script src="https://unpkg.com/@superset-ui/embedded-sdk@0.2.0"></script>
+<script>
+const L = m => { document.getElementById('log').textContent += m + "\n"; console.log(m); };
+window.onerror = (m,s,l) => L("JSERROR " + m + " @" + l);
+window.addEventListener('unhandledrejection', e => L("REJECTION " + (e.reason && (e.reason.stack || e.reason.message || e.reason))));
+const DOMAIN = 'http://localhost:8088';
+const ID = 'da1f9b3b-8911-4eb7-a7eb-9df03b41bb1c';
+(async () => {
+  try {
+    if (typeof supersetEmbeddedSdk === 'undefined') throw new Error('SDK not loaded (CDN blocked?)');
+    L('sdk ok');
+    await supersetEmbeddedSdk.embedDashboard({
+      id: ID,
+      supersetDomain: DOMAIN,
+      mountPoint: document.getElementById('c'),
+      fetchGuestToken: async () => {
+        const r = await fetch(DOMAIN + '/api/v1/security/login', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({username:'admin',password:'admin',provider:'db',refresh:true})
+        });
+        if (!r.ok) throw new Error('login http ' + r.status);
+        const at = (await r.json()).access_token;
+        const r2 = await fetch(DOMAIN + '/api/v1/security/guest_token/', {
+          method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+at},
+          body: JSON.stringify({user:{username:'1',first_name:'T',last_name:'E'},resources:[{type:'dashboard',id:ID}],rls:[]})
+        });
+        if (!r2.ok) throw new Error('guest token http ' + r2.status);
+        L('token ok');
+        return (await r2.json()).token;
+      },
+      dashboardUiConfig: { hideTitle:true, hideControls:true, hideChartControls:true },
+    });
+    L('embed resolved');
+    const ifr = document.querySelector('#c iframe');
+    L('iframe present: ' + !!ifr + ' src=' + (ifr && ifr.src));
+    document.getElementById('loader').style.display='none';
+  } catch (e) {
+    L('EMBED ERROR: ' + (e.stack || e.message || e));
+  }
+})();
+setTimeout(()=>{ const ifr=document.querySelector('#c iframe');
+  L('after 8s, iframe=' + !!ifr + ' frames=' + document.querySelectorAll('iframe').length); }, 8000);
+</script>
+</body>
+</html>

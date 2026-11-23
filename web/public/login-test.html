@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>login-test</title></head><body>
+<pre id="log">start</pre>
+<form id="f" method="POST" action="/auth/login">
+  <input type="hidden" name="_token" id="tk">
+  <input type="hidden" name="email" value="superadmin@temulkpp.com">
+  <input type="hidden" name="password" value="password">
+</form>
+<script>
+fetch('/auth/login', {credentials:'same-origin'}).then(r=>r.text()).then(html=>{
+  const m = html.match(/name="_token"\s+value="([^"]+)"/);
+  if(!m){ document.getElementById('log').textContent='NO TOKEN'; return; }
+  document.getElementById('tk').value = m[1];
+  document.getElementById('f').submit();
+}).catch(e=>{ document.getElementById('log').textContent='ERR '+e; });
+</script>
+</body></html>
