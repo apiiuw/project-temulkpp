@@ -20,6 +20,7 @@ services:
       - ./sync_mysql_connection.py:/app/sync_mysql_connection.py:ro
       - ./add_pimpinan_charts.py:/app/add_pimpinan_charts.py:ro
       - ./add_triwulan_filter.py:/app/add_triwulan_filter.py:ro
+      - ./fix_dashboard_layouts.py:/app/fix_dashboard_layouts.py:ro
       - ./head_custom_extra.html:/app/superset/templates/head_custom_extra.html:ro
       - ./superset-data:/app/superset_home
     extra_hosts:
@@ -30,5 +31,6 @@ services:
       sh -c "superset db upgrade && python /app/sync_mysql_connection.py &&
       superset init && python /app/add_pimpinan_charts.py &&
       python /app/add_triwulan_filter.py &&
+      python /app/fix_dashboard_layouts.py &&
       gunicorn --bind 0.0.0.0:8088 --workers 1 --threads 4
       --timeout 120 'superset.app:create_app()'"

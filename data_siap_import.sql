@@ -11422,7 +11422,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Kendala/Permasalahan Aplikasi', 'Kendala/Permasalahan Aplikasi', 
-    NULL, '2025-01-08 14:35:40', 2025, 'RES-20250108-JSJ9', 'nan', 
+    NULL, '2025-01-08 14:35:40', 2025, 'RES-20250108-JSJ9', 'completed', 
     'EXCEL_IMPORT', 'Agent 12', 762, NULL, '2025-01-08 14:35:40', 
     '2026-10-27 16:25:39', '2026-10-27 16:25:39', NULL, '2025-01-08 14:35:40', '2025-01-08 14:41:10', 
     NULL, NULL, NULL, NULL, NULL, 
@@ -11437,7 +11437,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Perubahan Data', 'Perubahan Data', 
-    NULL, '2025-01-08 14:41:10', 2025, 'RES-20250108-CXB9', 'nan', 
+    NULL, '2025-01-08 14:41:10', 2025, 'RES-20250108-CXB9', 'completed', 
     'EXCEL_IMPORT', 'Agent 12', 763, NULL, '2025-01-08 14:41:10', 
     '2026-10-27 16:25:39', '2026-10-27 16:25:39', NULL, '2025-01-08 14:41:10', '2025-01-08 14:41:10', 
     NULL, NULL, NULL, NULL, NULL, 
@@ -12667,7 +12667,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Kendala Akun Inaproc', 'Kendala Akun Inaproc', 
-    NULL, '2026-01-22 10:26:35', 2026, 'RES-20260122-V4HP', 'nan', 
+    NULL, '2026-01-22 10:26:35', 2026, 'RES-20260122-V4HP', 'completed', 
     'EXCEL_IMPORT', 'Agent 13', 845, NULL, '2026-01-22 10:26:35', 
     '2026-10-27 16:25:39', '2026-10-27 16:25:39', NULL, '2026-01-22 10:26:35', '2026-01-22 10:43:28', 
     NULL, NULL, NULL, NULL, NULL, 
@@ -25387,7 +25387,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Kendala/Permasalahan Aplikasi', 'Kendala/Permasalahan Aplikasi', 
-    NULL, '2025-04-16 13:56:32', 2025, 'RES-20250416-F5BH', 'in_progress', 
+    NULL, '2025-04-16 13:56:32', 2025, 'RES-20250416-F5BH', 'completed', 
     'EXCEL_IMPORT', 'Agent 4', 1693, NULL, '2025-04-16 13:56:32', 
     '2026-10-27 16:25:39', '2026-10-27 16:25:39', NULL, '2025-04-16 13:56:32', '2025-04-16 13:56:32', 
     NULL, NULL, NULL, NULL, NULL, 
@@ -40837,7 +40837,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Perubahan Data', 'Perubahan Data', 
-    NULL, '2026-01-21 08:16:54', 2026, 'RES-20260121-1FGE', 'nan', 
+    NULL, '2026-01-21 08:16:54', 2026, 'RES-20260121-1FGE', 'completed', 
     'EXCEL_IMPORT', 'Agent 9', 2723, NULL, '2026-01-21 08:16:54', 
     '2026-10-27 16:25:40', '2026-10-27 16:25:40', NULL, '2026-01-21 08:16:54', '2026-01-21 09:21:31', 
     NULL, NULL, NULL, NULL, NULL, 
@@ -40852,7 +40852,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Perubahan Data', 'Perubahan Data', 
-    NULL, '2026-01-21 09:21:31', 2026, 'RES-20260121-JFVD', 'nan', 
+    NULL, '2026-01-21 09:21:31', 2026, 'RES-20260121-JFVD', 'completed', 
     'EXCEL_IMPORT', 'Agent 9', 2724, NULL, '2026-01-21 09:21:31', 
     '2026-10-27 16:25:40', '2026-10-27 16:25:40', NULL, '2026-01-21 09:21:31', '2026-01-21 09:35:19', 
     NULL, NULL, NULL, NULL, NULL, 
@@ -40867,7 +40867,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Kendala Akun Inaproc', 'Kendala Akun Inaproc', 
-    NULL, '2026-01-21 09:35:19', 2026, 'RES-20260121-0D8S', 'nan', 
+    NULL, '2026-01-21 09:35:19', 2026, 'RES-20260121-0D8S', 'completed', 
     'EXCEL_IMPORT', 'Agent 9', 2725, NULL, '2026-01-21 09:35:19', 
     '2026-10-27 16:25:40', '2026-10-27 16:25:40', NULL, '2026-01-21 09:35:19', '2026-01-21 10:44:07', 
     NULL, NULL, NULL, NULL, NULL, 
@@ -40882,7 +40882,7 @@ INSERT INTO `reservations` (
     `rating_kepuasan`, `rating_comment`, `rated_at`
 ) VALUES (
     'Data Historis LKPP', 'Data Historis', 'LKPP', 'Kendala Akun Inaproc', 'Kendala Akun Inaproc', 
-    NULL, '2026-01-21 10:44:07', 2026, 'RES-20260121-5SXC', 'nan', 
+    NULL, '2026-01-21 10:44:07', 2026, 'RES-20260121-5SXC', 'completed', 
     'EXCEL_IMPORT', 'Agent 9', 2726, NULL, '2026-01-21 10:44:07', 
     '2026-10-27 16:25:40', '2026-10-27 16:25:40', NULL, '2026-01-21 10:44:07', '2026-01-21 12:38:30', 
     NULL, NULL, NULL, NULL, NULL, 
